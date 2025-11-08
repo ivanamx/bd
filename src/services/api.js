@@ -7,7 +7,7 @@
 const USE_PRODUCTION = true; // Cambia a true para usar el VPS
 
 const DEV_URL = 'https://reasonably-sister-asset-concept.trycloudflare.com/api'; // Cloudflare Tunnel (desarrollo)
-const PROD_URL = 'https://burst-side-ooo-daniel.trycloudflare.com/api'; // VPS con Cloudflare Tunnel
+const PROD_URL = 'https://api.loreastrea.com/api'; // VPS con dominio permanente
 
 const API_BASE_URL = (__DEV__ && !USE_PRODUCTION) 
   ? DEV_URL  // Desarrollo: Cloudflare Tunnel
