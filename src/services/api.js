@@ -1,13 +1,17 @@
 // Configuración de la API
-// IMPORTANTE: Cuando usas Expo con --tunnel, necesitas exponer el backend también
-// Opción 1: Usa localtunnel (recomendado) - ejecuta: cd backend && npm run tunnel
-// Opción 2: Usa ngrok - ejecuta: ngrok http 5000
-// Luego actualiza la URL de abajo con la URL pública que te dé el tunnel
+// URLs disponibles:
+// - Desarrollo local con tunnel: Cloudflare Tunnel
+// - Producción: VPS
 
-// URL del backend - Cloudflare Tunnel
-const API_BASE_URL = __DEV__ 
-  ? 'https://reasonably-sister-asset-concept.trycloudflare.com/api'  // Cloudflare Tunnel
-  : 'http://192.168.0.10:8765/api';  // Para producción
+// Para cambiar entre desarrollo y producción, cambia el valor de USE_PRODUCTION
+const USE_PRODUCTION = true; // Cambia a true para usar el VPS
+
+const DEV_URL = 'https://reasonably-sister-asset-concept.trycloudflare.com/api'; // Cloudflare Tunnel (desarrollo)
+const PROD_URL = 'https://burst-side-ooo-daniel.trycloudflare.com/api'; // VPS con Cloudflare Tunnel
+
+const API_BASE_URL = (__DEV__ && !USE_PRODUCTION) 
+  ? DEV_URL  // Desarrollo: Cloudflare Tunnel
+  : PROD_URL;  // Producción: VPS
 
 /**
  * Función auxiliar para hacer peticiones HTTP

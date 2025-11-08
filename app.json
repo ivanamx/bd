@@ -12,13 +12,27 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.lorei.encounters",
-      "buildNumber": "1.0.0"
+      "buildNumber": "1.0.0",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "assetBundlePatterns": [
       "**/*"
     ],
     "scheme": "lorei",
-    "sdkVersion": "54.0.0"
+    "sdkVersion": "54.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "4e60fa20-3444-4206-b725-4cf413cccd9b"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4e60fa20-3444-4206-b725-4cf413cccd9b"
+    },
+    "android": {}
   }
 }
-
