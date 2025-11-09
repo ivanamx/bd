@@ -5,6 +5,7 @@ import NewEncounterScreen from '../screens/NewEncounterScreen';
 import ScheduleEncounterScreen from '../screens/ScheduleEncounterScreen';
 import EncounterDetailScreen from '../screens/EncounterDetailScreen';
 import CatalystsScreen from '../screens/CatalystsScreen';
+import StatisticsScreen from '../screens/StatisticsScreen';
 import { useTheme } from '../context/ThemeContext';
 
 const Stack = createStackNavigator();
@@ -56,6 +57,11 @@ export default function MainNavigator() {
         name="Catalysts"
         component={CatalystsScreen}
         options={{ title: 'Tops' }}
+      />
+      <Stack.Screen
+        name="Statistics"
+        component={StatisticsScreen}
+        options={{ title: 'Estadísticas' }}
       />
     </Stack.Navigator>
   );

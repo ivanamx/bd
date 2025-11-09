@@ -24,12 +24,18 @@ export default function EncountersListScreen({ navigation }) {
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Catalysts')}
-          style={{ marginRight: 16 }}
-        >
-          <Ionicons name="people-outline" size={24} color="#d4a5c7" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16, gap: 16 }}>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Catalysts')}
+          >
+            <Ionicons name="people-outline" size={24} color="#d4a5c7" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Statistics')}
+          >
+            <Ionicons name="stats-chart-outline" size={24} color="#d4a5c7" />
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation]);

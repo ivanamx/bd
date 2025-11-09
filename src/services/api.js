@@ -155,3 +155,12 @@ export const getAIAnalysis = async (catalystId, formData = {}) => {
   return fetchAPI(`/ai-analysis/${catalystParam}?formData=${encodedFormData}`);
 };
 
+// ==================== ESTADÍSTICAS ====================
+
+/**
+ * Obtener todas las estadísticas generales
+ */
+export const getStatistics = async () => {
+  return fetchAPI('/statistics');
+};
+
