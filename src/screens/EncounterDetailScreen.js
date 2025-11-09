@@ -125,6 +125,7 @@ export default function EncounterDetailScreen({ route }) {
           <DetailItem icon="body-outline" label="Posiciones" value={encounter.posiciones} />
           <DetailItem icon="star-outline" label="Final" value={encounter.final} />
           <DetailItem icon="shirt-outline" label="Ropa/Lencería" value={encounter.ropa} />
+          <DetailItem icon="cube-outline" label="Accesorios" value={encounter.accesorios} />
         </View>
       </View>
 
@@ -222,34 +223,37 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    justifyContent: 'space-between',
   },
   detailItem: {
-    flex: 1,
-    minWidth: '47%',
+    width: '47%',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     marginBottom: 0,
+    minHeight: 100,
   },
   detailItemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   detailItemContent: {
     flex: 1,
+    minHeight: 50,
   },
   detailItemLabel: {
-    fontSize: 12,
-    marginBottom: 6,
+    fontSize: 11,
+    marginBottom: 4,
     fontWeight: '500',
   },
   detailItemValue: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    lineHeight: 20,
+    lineHeight: 18,
+    flexWrap: 'wrap',
   },
   scoresContainer: {
     flexDirection: 'row',

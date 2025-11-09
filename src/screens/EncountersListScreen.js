@@ -161,9 +161,9 @@ export default function EncountersListScreen({ navigation }) {
     if (!tamano) return null;
     
     const sizes = [
-      { label: 'Pequeño', activeSize: 16, inactiveSize: 10 },
-      { label: 'Mediano', activeSize: 22, inactiveSize: 10 },
-      { label: 'Grande', activeSize: 28, inactiveSize: 10 }
+      { label: 'Pequeño', fontSize: 14 },
+      { label: 'Mediano', fontSize: 20 },
+      { label: 'Grande', fontSize: 26 }
     ];
     
     return (
@@ -176,9 +176,8 @@ export default function EncountersListScreen({ navigation }) {
               style={[
                 styles.sizeIcon,
                 {
-                  fontSize: isActive ? size.activeSize : size.inactiveSize,
-                  opacity: isActive ? 1.0 : 0.15,
-                  transform: [{ scale: isActive ? 1.0 : 0.7 }],
+                  fontSize: size.fontSize,
+                  opacity: isActive ? 1.0 : 0.25,
                   marginRight: index < sizes.length - 1 ? 6 : 0,
                 }
               ]}
