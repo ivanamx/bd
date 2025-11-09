@@ -5,15 +5,17 @@ const pool = require('../config/database');
 // GET /api/encounters - Obtener todos los encuentros con alias del catalizador
 router.get('/', async (req, res) => {
   try {
+    const userId = req.user.userId;
     const query = `
       SELECT 
         e.*,
         c.alias
       FROM encounters e
       JOIN catalysts c ON e.catalyst_id = c.catalyst_id
+      WHERE e.user_id = $1 AND c.user_id = $1
       ORDER BY e.fecha_encuentro DESC
     `;
-    const result = await pool.query(query);
+    const result = await pool.query(query, [userId]);
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching encounters:', error);
@@ -25,15 +27,16 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.userId;
     const query = `
       SELECT 
         e.*,
         c.alias
       FROM encounters e
       JOIN catalysts c ON e.catalyst_id = c.catalyst_id
-      WHERE e.encounter_id = $1
+      WHERE e.encounter_id = $1 AND e.user_id = $2 AND c.user_id = $2
     `;
-    const result = await pool.query(query, [id]);
+    const result = await pool.query(query, [id, userId]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Encuentro no encontrado' });
@@ -74,18 +77,29 @@ router.post('/', async (req, res) => {
       });
     }
 
+    const userId = req.user.userId;
+    
+    // Verificar que el catalyst pertenece al usuario
+    const catalystCheckQuery = 'SELECT catalyst_id FROM catalysts WHERE catalyst_id = $1 AND user_id = $2';
+    const catalystCheck = await pool.query(catalystCheckQuery, [catalyst_id, userId]);
+    
+    if (catalystCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'No tienes permiso para usar este catalizador' });
+    }
+
     const query = `
       INSERT INTO encounters (
-        catalyst_id, fecha_encuentro, duracion_min, lugar_encuentro,
+        user_id, catalyst_id, fecha_encuentro, duracion_min, lugar_encuentro,
         tamano, condon, posiciones, final, ropa,
         score_toma_ruda, score_acento_ancla, score_compart,
         score_oral_mio, score_oral_suyo, rating_general, notas_detalladas
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
       RETURNING *
     `;
     
     const values = [
+      userId,
       catalyst_id,
       fecha_encuentro,
       duracion_min || 60,
@@ -107,8 +121,8 @@ router.post('/', async (req, res) => {
     const result = await pool.query(query, values);
     
     // Obtener el alias del catalizador
-    const catalystQuery = 'SELECT alias FROM catalysts WHERE catalyst_id = $1';
-    const catalystResult = await pool.query(catalystQuery, [catalyst_id]);
+    const catalystQuery = 'SELECT alias FROM catalysts WHERE catalyst_id = $1 AND user_id = $2';
+    const catalystResult = await pool.query(catalystQuery, [catalyst_id, userId]);
     
     res.status(201).json({
       ...result.rows[0],

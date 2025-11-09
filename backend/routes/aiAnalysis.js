@@ -3,7 +3,7 @@ const router = express.Router();
 const pool = require('../config/database');
 
 // Función para obtener estadísticas de un catalizador
-async function getCatalystStats(catalystId) {
+async function getCatalystStats(catalystId, userId) {
   const statsQuery = `
     SELECT 
       COUNT(*) as total_encuentros,
@@ -12,25 +12,25 @@ async function getCatalystStats(catalystId) {
       MAX(fecha_encuentro) as ultimo_encuentro,
       MIN(fecha_encuentro) as primer_encuentro
     FROM encounters
-    WHERE catalyst_id = $1
+    WHERE catalyst_id = $1 AND user_id = $2
   `;
-  const statsResult = await pool.query(statsQuery, [catalystId]);
+  const statsResult = await pool.query(statsQuery, [catalystId, userId]);
   return statsResult.rows[0];
 }
 
 // Función para obtener posiciones más usadas
-async function getTopPosiciones(catalystId) {
+async function getTopPosiciones(catalystId, userId) {
   const posicionesQuery = `
     SELECT 
       posiciones,
       COUNT(*) as veces
     FROM encounters
-    WHERE catalyst_id = $1 AND posiciones IS NOT NULL AND posiciones != ''
+    WHERE catalyst_id = $1 AND user_id = $2 AND posiciones IS NOT NULL AND posiciones != ''
     GROUP BY posiciones
     ORDER BY veces DESC
     LIMIT 5
   `;
-  const result = await pool.query(posicionesQuery, [catalystId]);
+  const result = await pool.query(posicionesQuery, [catalystId, userId]);
   
   // Parsear posiciones (pueden ser arrays o strings separados por comas)
   return result.rows.map(row => {
@@ -43,18 +43,18 @@ async function getTopPosiciones(catalystId) {
 }
 
 // Función para obtener lugares más frecuentes
-async function getLugaresFrecuentes(catalystId) {
+async function getLugaresFrecuentes(catalystId, userId) {
   const lugaresQuery = `
     SELECT 
       lugar_encuentro,
       COUNT(*) as veces
     FROM encounters
-    WHERE catalyst_id = $1 AND lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
+    WHERE catalyst_id = $1 AND user_id = $2 AND lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
     GROUP BY lugar_encuentro
     ORDER BY veces DESC
     LIMIT 5
   `;
-  const result = await pool.query(lugaresQuery, [catalystId]);
+  const result = await pool.query(lugaresQuery, [catalystId, userId]);
   return result.rows.map(row => ({
     nombre: row.lugar_encuentro,
     veces: parseInt(row.veces)
@@ -62,23 +62,23 @@ async function getLugaresFrecuentes(catalystId) {
 }
 
 // Función para obtener historial de encuentros
-async function getEncounterHistory(catalystId, limit = 10) {
+async function getEncounterHistory(catalystId, userId, limit = 10) {
   const historyQuery = `
     SELECT 
       e.*,
       c.alias
     FROM encounters e
     JOIN catalysts c ON e.catalyst_id = c.catalyst_id
-    WHERE e.catalyst_id = $1
+    WHERE e.catalyst_id = $1 AND e.user_id = $2 AND c.user_id = $2
     ORDER BY e.fecha_encuentro DESC
-    LIMIT $2
+    LIMIT $3
   `;
-  const result = await pool.query(historyQuery, [catalystId, limit]);
+  const result = await pool.query(historyQuery, [catalystId, userId, limit]);
   return result.rows;
 }
 
 // Función para obtener estadísticas generales (todos los tops)
-async function getAllStats() {
+async function getAllStats(userId) {
   const statsQuery = `
     SELECT 
       COUNT(*) as total_encuentros,
@@ -87,24 +87,25 @@ async function getAllStats() {
       MAX(fecha_encuentro) as ultimo_encuentro,
       MIN(fecha_encuentro) as primer_encuentro
     FROM encounters
+    WHERE user_id = $1
   `;
-  const statsResult = await pool.query(statsQuery);
+  const statsResult = await pool.query(statsQuery, [userId]);
   return statsResult.rows[0];
 }
 
 // Función para obtener posiciones más usadas (todos los tops)
-async function getAllTopPosiciones() {
+async function getAllTopPosiciones(userId) {
   const posicionesQuery = `
     SELECT 
       posiciones,
       COUNT(*) as veces
     FROM encounters
-    WHERE posiciones IS NOT NULL AND posiciones != ''
+    WHERE user_id = $1 AND posiciones IS NOT NULL AND posiciones != ''
     GROUP BY posiciones
     ORDER BY veces DESC
     LIMIT 5
   `;
-  const result = await pool.query(posicionesQuery);
+  const result = await pool.query(posicionesQuery, [userId]);
   
   return result.rows.map(row => {
     const posiciones = row.posiciones.split(',').map(p => p.trim());
@@ -116,18 +117,18 @@ async function getAllTopPosiciones() {
 }
 
 // Función para obtener lugares más frecuentes (todos los tops)
-async function getAllLugaresFrecuentes() {
+async function getAllLugaresFrecuentes(userId) {
   const lugaresQuery = `
     SELECT 
       lugar_encuentro,
       COUNT(*) as veces
     FROM encounters
-    WHERE lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
+    WHERE user_id = $1 AND lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
     GROUP BY lugar_encuentro
     ORDER BY veces DESC
     LIMIT 5
   `;
-  const result = await pool.query(lugaresQuery);
+  const result = await pool.query(lugaresQuery, [userId]);
   return result.rows.map(row => ({
     nombre: row.lugar_encuentro,
     veces: parseInt(row.veces)
@@ -135,17 +136,18 @@ async function getAllLugaresFrecuentes() {
 }
 
 // Función para obtener historial de encuentros (todos los tops)
-async function getAllEncounterHistory(limit = 10) {
+async function getAllEncounterHistory(userId, limit = 10) {
   const historyQuery = `
     SELECT 
       e.*,
       c.alias
     FROM encounters e
     JOIN catalysts c ON e.catalyst_id = c.catalyst_id
+    WHERE e.user_id = $1 AND c.user_id = $1
     ORDER BY e.fecha_encuentro DESC
-    LIMIT $1
+    LIMIT $2
   `;
-  const result = await pool.query(historyQuery, [limit]);
+  const result = await pool.query(historyQuery, [userId, limit]);
   return result.rows;
 }
 
@@ -507,6 +509,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional antes o después. El 
 router.get('/:catalystId', async (req, res) => {
   try {
     const { catalystId } = req.params;
+    const userId = req.user.userId;
     let formData = {};
     try {
       if (req.query.formData) {
@@ -521,18 +524,18 @@ router.get('/:catalystId', async (req, res) => {
 
     // Si catalystId es "all", obtener estadísticas generales
     if (catalystId === 'all') {
-      stats = await getAllStats();
-      topPosiciones = await getAllTopPosiciones();
-      lugaresFrecuentes = await getAllLugaresFrecuentes();
-      history = await getAllEncounterHistory(10);
+      stats = await getAllStats(userId);
+      topPosiciones = await getAllTopPosiciones(userId);
+      lugaresFrecuentes = await getAllLugaresFrecuentes(userId);
+      history = await getAllEncounterHistory(userId, 10);
       catalyst = {
         alias: 'Todos los Tops',
         catalyst_id: null,
       };
     } else {
       // Obtener datos del catalizador específico
-      const catalystQuery = 'SELECT * FROM catalysts WHERE catalyst_id = $1';
-      const catalystResult = await pool.query(catalystQuery, [catalystId]);
+      const catalystQuery = 'SELECT * FROM catalysts WHERE catalyst_id = $1 AND user_id = $2';
+      const catalystResult = await pool.query(catalystQuery, [catalystId, userId]);
       
       if (catalystResult.rows.length === 0) {
         return res.status(404).json({ error: 'Catalizador no encontrado' });
@@ -541,10 +544,10 @@ router.get('/:catalystId', async (req, res) => {
       catalyst = catalystResult.rows[0];
 
       // Obtener estadísticas
-      stats = await getCatalystStats(catalystId);
-      topPosiciones = await getTopPosiciones(catalystId);
-      lugaresFrecuentes = await getLugaresFrecuentes(catalystId);
-      history = await getEncounterHistory(catalystId, 10);
+      stats = await getCatalystStats(catalystId, userId);
+      topPosiciones = await getTopPosiciones(catalystId, userId);
+      lugaresFrecuentes = await getLugaresFrecuentes(catalystId, userId);
+      history = await getEncounterHistory(catalystId, userId, 10);
     }
 
     // Preparar datos para análisis

@@ -5,6 +5,8 @@ const pool = require('../config/database');
 // GET /api/statistics - Obtener todas las estadísticas generales
 router.get('/', async (req, res) => {
   try {
+    const userId = req.user.userId;
+    
     // Estadísticas generales
     const generalStatsQuery = `
       SELECT 
@@ -15,16 +17,17 @@ router.get('/', async (req, res) => {
         MAX(fecha_encuentro) as ultimo_encuentro,
         MIN(fecha_encuentro) as primer_encuentro
       FROM encounters
+      WHERE user_id = $1
     `;
-    const generalStats = await pool.query(generalStatsQuery);
+    const generalStats = await pool.query(generalStatsQuery, [userId]);
     
     // Encuentros este mes
     const thisMonthQuery = `
       SELECT COUNT(*) as encuentros_este_mes
       FROM encounters
-      WHERE DATE_TRUNC('month', fecha_encuentro) = DATE_TRUNC('month', CURRENT_DATE)
+      WHERE user_id = $1 AND DATE_TRUNC('month', fecha_encuentro) = DATE_TRUNC('month', CURRENT_DATE)
     `;
-    const thisMonth = await pool.query(thisMonthQuery);
+    const thisMonth = await pool.query(thisMonthQuery, [userId]);
     
     // Distribución de ratings
     const ratingDistributionQuery = `
@@ -37,11 +40,11 @@ router.get('/', async (req, res) => {
         END as rango,
         COUNT(*) as cantidad
       FROM encounters
-      WHERE rating_general IS NOT NULL
+      WHERE user_id = $1 AND rating_general IS NOT NULL
       GROUP BY rango
       ORDER BY rango DESC
     `;
-    const ratingDistribution = await pool.query(ratingDistributionQuery);
+    const ratingDistribution = await pool.query(ratingDistributionQuery, [userId]);
     
     // Top 5 Tops más frecuentes
     const topTopsQuery = `
@@ -51,13 +54,14 @@ router.get('/', async (req, res) => {
         COUNT(e.encounter_id) as total_encuentros,
         COALESCE(AVG(e.rating_general), 0) as rating_promedio
       FROM catalysts c
-      LEFT JOIN encounters e ON c.catalyst_id = e.catalyst_id
+      LEFT JOIN encounters e ON c.catalyst_id = e.catalyst_id AND e.user_id = $1
+      WHERE c.user_id = $1
       GROUP BY c.catalyst_id, c.alias
       HAVING COUNT(e.encounter_id) > 0
       ORDER BY total_encuentros DESC
       LIMIT 5
     `;
-    const topTops = await pool.query(topTopsQuery);
+    const topTops = await pool.query(topTopsQuery, [userId]);
     
     // Lugares más frecuentes
     const topLugaresQuery = `
@@ -65,12 +69,12 @@ router.get('/', async (req, res) => {
         lugar_encuentro as lugar,
         COUNT(*) as veces
       FROM encounters
-      WHERE lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
+      WHERE user_id = $1 AND lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
       GROUP BY lugar_encuentro
       ORDER BY veces DESC
       LIMIT 5
     `;
-    const topLugares = await pool.query(topLugaresQuery);
+    const topLugares = await pool.query(topLugaresQuery, [userId]);
     
     // Posiciones más comunes
     const topPosicionesQuery = `
@@ -78,12 +82,12 @@ router.get('/', async (req, res) => {
         posiciones,
         COUNT(*) as veces
       FROM encounters
-      WHERE posiciones IS NOT NULL AND posiciones != ''
+      WHERE user_id = $1 AND posiciones IS NOT NULL AND posiciones != ''
       GROUP BY posiciones
       ORDER BY veces DESC
       LIMIT 5
     `;
-    const topPosiciones = await pool.query(topPosicionesQuery);
+    const topPosiciones = await pool.query(topPosicionesQuery, [userId]);
     
     // Actividad mensual (últimos 12 meses)
     const monthlyActivityQuery = `
@@ -91,12 +95,12 @@ router.get('/', async (req, res) => {
         TO_CHAR(fecha_encuentro, 'YYYY-MM') as mes,
         COUNT(*) as cantidad
       FROM encounters
-      WHERE fecha_encuentro >= CURRENT_DATE - INTERVAL '12 months'
+      WHERE user_id = $1 AND fecha_encuentro >= CURRENT_DATE - INTERVAL '12 months'
       GROUP BY mes
       ORDER BY mes DESC
       LIMIT 12
     `;
-    const monthlyActivity = await pool.query(monthlyActivityQuery);
+    const monthlyActivity = await pool.query(monthlyActivityQuery, [userId]);
     
     // Mejor encuentro (rating más alto)
     const bestEncounterQuery = `
@@ -106,12 +110,12 @@ router.get('/', async (req, res) => {
         e.fecha_encuentro,
         c.alias
       FROM encounters e
-      LEFT JOIN catalysts c ON e.catalyst_id = c.catalyst_id
-      WHERE e.rating_general IS NOT NULL
+      LEFT JOIN catalysts c ON e.catalyst_id = c.catalyst_id AND c.user_id = $1
+      WHERE e.user_id = $1 AND e.rating_general IS NOT NULL
       ORDER BY e.rating_general DESC, e.fecha_encuentro DESC
       LIMIT 1
     `;
-    const bestEncounter = await pool.query(bestEncounterQuery);
+    const bestEncounter = await pool.query(bestEncounterQuery, [userId]);
     
     // Estadísticas de encuentros programados
     const scheduledStatsQuery = `
@@ -120,8 +124,9 @@ router.get('/', async (req, res) => {
         COUNT(*) FILTER (WHERE completado = true) as completados,
         COUNT(*) FILTER (WHERE completado = false AND fecha_encuentro < CURRENT_DATE) as vencidos
       FROM scheduled_encounters
+      WHERE user_id = $1
     `;
-    const scheduledStats = await pool.query(scheduledStatsQuery);
+    const scheduledStats = await pool.query(scheduledStatsQuery, [userId]);
     
     // Rating promedio por top (top 10)
     const ratingByTopQuery = `
@@ -131,13 +136,14 @@ router.get('/', async (req, res) => {
         COALESCE(AVG(e.rating_general), 0) as rating_promedio,
         COUNT(e.encounter_id) as total_encuentros
       FROM catalysts c
-      LEFT JOIN encounters e ON c.catalyst_id = e.catalyst_id
+      LEFT JOIN encounters e ON c.catalyst_id = e.catalyst_id AND e.user_id = $1
+      WHERE c.user_id = $1
       GROUP BY c.catalyst_id, c.alias
       HAVING COUNT(e.encounter_id) > 0
       ORDER BY rating_promedio DESC
       LIMIT 10
     `;
-    const ratingByTop = await pool.query(ratingByTopQuery);
+    const ratingByTop = await pool.query(ratingByTopQuery, [userId]);
     
     res.json({
       general: {
