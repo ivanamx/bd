@@ -105,10 +105,10 @@ export default function EncounterDetailScreen({ route, navigation }) {
 
   const formattedDate = format(new Date(encounter.fecha_encuentro), "d 'de' MMMM, yyyy 'a las' HH:mm", { locale: es });
 
-  const DetailRow = ({ icon, label, value }) => {
+  const DetailRow = ({ icon, label, value, style }) => {
     if (!value) return null;
     return (
-      <View style={styles.detailRow}>
+      <View style={[styles.detailRow, style]}>
         <Ionicons name={icon} size={20} color={theme.colors.primary} />
         <View style={styles.detailContent}>
           <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>{label}</Text>
@@ -118,8 +118,11 @@ export default function EncounterDetailScreen({ route, navigation }) {
     );
   };
 
-  const DetailItem = ({ icon, label, value }) => {
-    if (!value) return null;
+  const DetailItem = ({ icon, label, value, showNone = false }) => {
+    // Si showNone es true y no hay valor, mostrar "ninguno"
+    const displayValue = showNone && !value ? 'ninguno' : value;
+    if (!displayValue) return null;
+    
     return (
       <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
         <View style={[styles.detailItemIcon, { backgroundColor: theme.colors.primary + '15' }]}>
@@ -127,7 +130,7 @@ export default function EncounterDetailScreen({ route, navigation }) {
         </View>
         <View style={styles.detailItemContent}>
           <Text style={[styles.detailItemLabel, { color: theme.colors.textMuted }]}>{label}</Text>
-          <Text style={[styles.detailItemValue, { color: theme.colors.text }]} numberOfLines={2}>{value}</Text>
+          <Text style={[styles.detailItemValue, { color: theme.colors.text }]} numberOfLines={2}>{displayValue}</Text>
         </View>
       </View>
     );
@@ -161,9 +164,13 @@ export default function EncounterDetailScreen({ route, navigation }) {
           Información General
         </Text>
         
-        <DetailRow icon="calendar-outline" label="Fecha" value={formattedDate} />
-        <DetailRow icon="time-outline" label="Duración" value={`${encounter.duracion_min} minutos`} />
-        <DetailRow icon="location-outline" label="Lugar" value={encounter.lugar_encuentro} />
+        <DetailRow icon="calendar-outline" label="Fecha" value={formattedDate} style={{ marginBottom: 16 }} />
+        <View style={styles.detailRowContainer}>
+          <DetailRow icon="time-outline" label="Duración" value={`${encounter.duracion_min} minutos`} style={{ marginBottom: 0 }} />
+          {encounter.lugar_encuentro && (
+            <DetailRow icon="location-outline" label="Lugar" value={encounter.lugar_encuentro} style={{ marginBottom: 0 }} />
+          )}
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -177,7 +184,7 @@ export default function EncounterDetailScreen({ route, navigation }) {
           <DetailItem icon="body-outline" label="Posiciones" value={encounter.posiciones} />
           <DetailItem icon="star-outline" label="Final" value={encounter.final} />
           <DetailItem icon="shirt-outline" label="Ropa/Lencería" value={encounter.ropa} />
-          <DetailItem icon="cube-outline" label="Accesorios" value={encounter.accesorios} />
+          <DetailItem icon="cube-outline" label="Accesorios" value={encounter.accesorios} showNone={true} />
         </View>
       </View>
 
@@ -254,10 +261,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     letterSpacing: 0.5,
   },
+  detailRowContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    gap: 16,
+  },
   detailRow: {
     flexDirection: 'row',
     marginBottom: 16,
     alignItems: 'flex-start',
+    flex: 1,
   },
   detailContent: {
     marginLeft: 12,

@@ -159,6 +159,123 @@ export default function StatisticsScreen({ navigation }) {
     );
   };
 
+  const renderLineChart = (data, label, color, maxValue) => {
+    if (!data || data.length === 0) return null;
+
+    const chartHeight = 160;
+    const pointSize = 10;
+
+    // Calcular posiciones de los puntos
+    const points = data.map((item, index) => {
+      const value = item.cantidad || item.veces;
+      const percentage = maxValue > 0 ? value / maxValue : 0;
+      const y = chartHeight - (percentage * (chartHeight - 40)) - 20;
+      return { 
+        value, 
+        y,
+        percentage,
+        label: item.lugar || item.rango || item.posiciones || item.alias,
+        index
+      };
+    });
+
+    return (
+      <Animated.View
+        style={[
+          styles.chartCard,
+          {
+            backgroundColor: theme.colors.surfaceElevated,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <View style={styles.chartHeader}>
+          <Ionicons name="trending-up" size={24} color={color} />
+          <Text style={[styles.chartTitle, { color: theme.colors.text }]}>{label}</Text>
+        </View>
+        <View style={styles.lineChartContainer}>
+          <View style={[styles.lineChart, { height: chartHeight }]}>
+            {/* Líneas de conexión entre puntos */}
+            {points.map((point, index) => {
+              if (index === 0) return null;
+              const prevPoint = points[index - 1];
+              const dx = (100 / (points.length - 1));
+              const dy = prevPoint.y - point.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+              
+              return (
+                <View
+                  key={`line-${index}`}
+                  style={[
+                    styles.lineConnection,
+                    {
+                      left: `${(index - 1) * (100 / (points.length - 1))}%`,
+                      top: prevPoint.y,
+                      width: `${100 / (points.length - 1)}%`,
+                      height: 2,
+                      backgroundColor: color + 'CC',
+                      transform: [{ rotate: `${angle}deg` }],
+                      transformOrigin: '0 50%',
+                    },
+                  ]}
+                />
+              );
+            })}
+            
+            {/* Puntos */}
+            {points.map((point, index) => (
+              <View
+                key={`point-${index}`}
+                style={[
+                  styles.lineChartPoint,
+                  {
+                    left: `${index * (100 / (points.length - 1 || 1))}%`,
+                    top: point.y - pointSize / 2,
+                    width: pointSize,
+                    height: pointSize,
+                    borderRadius: pointSize / 2,
+                    backgroundColor: color,
+                    borderColor: theme.colors.surfaceElevated,
+                    borderWidth: 2,
+                  },
+                ]}
+              />
+            ))}
+            
+            {/* Etiquetas */}
+            <View style={styles.lineChartLabels}>
+              {points.map((point, index) => (
+                <View
+                  key={`label-${index}`}
+                  style={[
+                    styles.lineChartLabel,
+                    {
+                      left: `${index * (100 / (points.length - 1 || 1))}%`,
+                      marginLeft: -35,
+                      width: 70,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[styles.lineChartLabelText, { color: theme.colors.textMuted }]}
+                    numberOfLines={1}
+                  >
+                    {point.label.length > 8 ? point.label.substring(0, 8) + '...' : point.label}
+                  </Text>
+                  <Text style={[styles.lineChartValueText, { color: color }]}>
+                    {point.value}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+    );
+  };
+
   const renderPieChart = (data, label, colors) => {
     if (!data || data.length === 0) return null;
 
@@ -390,7 +507,7 @@ export default function StatisticsScreen({ navigation }) {
       )}
 
       {/* Lugares más frecuentes */}
-      {renderBarChart(
+      {renderLineChart(
         statistics.topLugares,
         'Lugares Más Frecuentes',
         '#6bcf7f',
@@ -636,6 +753,48 @@ const styles = StyleSheet.create({
   bar: {
     height: '100%',
     borderRadius: 12,
+  },
+  lineChartContainer: {
+    marginTop: 20,
+    paddingHorizontal: 10,
+  },
+  lineChart: {
+    position: 'relative',
+    width: '100%',
+    paddingBottom: 50,
+  },
+  lineConnection: {
+    position: 'absolute',
+    transformOrigin: '0 50%',
+  },
+  lineChartPoint: {
+    position: 'absolute',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  lineChartLabels: {
+    position: 'absolute',
+    bottom: -45,
+    width: '100%',
+    height: 40,
+  },
+  lineChartLabel: {
+    position: 'absolute',
+    alignItems: 'center',
+  },
+  lineChartLabelText: {
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  lineChartValueText: {
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   pieChartContainer: {
     alignItems: 'center',
