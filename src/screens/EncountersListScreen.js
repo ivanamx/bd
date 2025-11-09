@@ -161,9 +161,9 @@ export default function EncountersListScreen({ navigation }) {
     if (!tamano) return null;
     
     const sizes = [
-      { label: 'Pequeño', height: 12, width: 4 },
-      { label: 'Mediano', height: 18, width: 5 },
-      { label: 'Grande', height: 24, width: 6 }
+      { label: 'Pequeño', fontSize: 14, opacity: 0.4 },
+      { label: 'Mediano', fontSize: 18, opacity: 0.6 },
+      { label: 'Grande', fontSize: 22, opacity: 1.0 }
     ];
     
     return (
@@ -171,21 +171,19 @@ export default function EncountersListScreen({ navigation }) {
         {sizes.map((size, index) => {
           const isActive = size.label === tamano;
           return (
-            <View
+            <Text
               key={index}
               style={[
-                styles.sizeBar,
+                styles.sizeIcon,
                 {
-                  height: size.height,
-                  width: size.width,
-                  backgroundColor: isActive 
-                    ? theme.colors.primary 
-                    : theme.colors.textMuted + '40',
-                  borderRadius: size.width / 2,
+                  fontSize: size.fontSize,
+                  opacity: isActive ? size.opacity : 0.2,
                   marginRight: index < sizes.length - 1 ? 4 : 0,
                 }
               ]}
-            />
+            >
+              🍆
+            </Text>
           );
         })}
       </View>
@@ -809,13 +807,13 @@ const styles = StyleSheet.create({
   },
   sizeIconsContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'center',
     height: 24,
     gap: 4,
   },
-  sizeBar: {
-    alignSelf: 'flex-end',
+  sizeIcon: {
+    lineHeight: 22,
   },
   locationContainer: {
     flexDirection: 'row',

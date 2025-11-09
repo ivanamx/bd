@@ -89,9 +89,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signIn = async (email, password) => {
+  const signIn = async (usernameOrEmail, password) => {
     try {
-      const response = await AuthAPI.login(email, password);
+      const response = await AuthAPI.login(usernameOrEmail, password);
       
       // Guardar tokens y usuario
       await AsyncStorage.setItem('authTokens', JSON.stringify(response.tokens));
@@ -110,9 +110,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signUp = async (email, password) => {
+  const signUp = async (username, email, password) => {
     try {
-      const response = await AuthAPI.register(email, password);
+      const response = await AuthAPI.register(username, email, password);
       
       // Guardar tokens y usuario
       await AsyncStorage.setItem('authTokens', JSON.stringify(response.tokens));

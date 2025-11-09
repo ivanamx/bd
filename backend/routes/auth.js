@@ -7,11 +7,20 @@ const pool = require('../config/database');
 // POST /api/auth/register - Registrar nuevo usuario
 router.post('/register', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, email, password } = req.body;
 
     // Validaciones
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Username, email y contraseña son requeridos' });
+    }
+
+    // Validar username (mínimo 3 caracteres, solo letras, números y guiones bajos)
+    if (username.length < 3) {
+      return res.status(400).json({ error: 'El username debe tener al menos 3 caracteres' });
+    }
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    if (!usernameRegex.test(username)) {
+      return res.status(400).json({ error: 'El username solo puede contener letras, números y guiones bajos' });
     }
 
     // Validar formato de email
@@ -25,11 +34,19 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'La contraseña debe tener al menos 8 caracteres' });
     }
 
-    // Verificar si el usuario ya existe
-    const checkUserQuery = 'SELECT user_id FROM users WHERE email = $1';
-    const checkUserResult = await pool.query(checkUserQuery, [email.toLowerCase()]);
+    // Verificar si el username ya existe
+    const checkUsernameQuery = 'SELECT user_id FROM users WHERE username = $1';
+    const checkUsernameResult = await pool.query(checkUsernameQuery, [username.toLowerCase()]);
 
-    if (checkUserResult.rows.length > 0) {
+    if (checkUsernameResult.rows.length > 0) {
+      return res.status(400).json({ error: 'El username ya está en uso' });
+    }
+
+    // Verificar si el email ya existe
+    const checkEmailQuery = 'SELECT user_id FROM users WHERE email = $1';
+    const checkEmailResult = await pool.query(checkEmailQuery, [email.toLowerCase()]);
+
+    if (checkEmailResult.rows.length > 0) {
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
 
@@ -39,11 +56,12 @@ router.post('/register', async (req, res) => {
 
     // Crear usuario
     const insertUserQuery = `
-      INSERT INTO users (email, password_hash, created_at)
-      VALUES ($1, $2, NOW())
-      RETURNING user_id, email, created_at
+      INSERT INTO users (username, email, password_hash, created_at)
+      VALUES ($1, $2, $3, NOW())
+      RETURNING user_id, username, email, created_at
     `;
     const insertResult = await pool.query(insertUserQuery, [
+      username.toLowerCase(),
       email.toLowerCase(),
       passwordHash,
     ]);
@@ -75,6 +93,7 @@ router.post('/register', async (req, res) => {
       message: 'Usuario registrado exitosamente',
       user: {
         userId: user.user_id,
+        username: user.username,
         email: user.email,
       },
       tokens: {
@@ -84,6 +103,9 @@ router.post('/register', async (req, res) => {
     });
   } catch (error) {
     console.error('Error en registro:', error);
+    if (error.code === '23505') { // Violación de unique constraint
+      return res.status(400).json({ error: 'El username o email ya está en uso' });
+    }
     res.status(500).json({ error: 'Error al registrar usuario' });
   }
 });
@@ -91,19 +113,25 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/login - Iniciar sesión
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { usernameOrEmail, password } = req.body;
 
     // Validaciones
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email y contraseña son requeridos' });
+    if (!usernameOrEmail || !password) {
+      return res.status(400).json({ error: 'Username/Email y contraseña son requeridos' });
     }
 
-    // Buscar usuario
-    const userQuery = 'SELECT user_id, email, password_hash FROM users WHERE email = $1';
-    const userResult = await pool.query(userQuery, [email.toLowerCase()]);
+    // Determinar si es email o username
+    const isEmail = usernameOrEmail.includes('@');
+    
+    // Buscar usuario por username o email
+    const userQuery = isEmail
+      ? 'SELECT user_id, username, email, password_hash FROM users WHERE email = $1'
+      : 'SELECT user_id, username, email, password_hash FROM users WHERE username = $1';
+    
+    const userResult = await pool.query(userQuery, [usernameOrEmail.toLowerCase()]);
 
     if (userResult.rows.length === 0) {
-      return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+      return res.status(401).json({ error: 'Username/Email o contraseña incorrectos' });
     }
 
     const user = userResult.rows[0];
@@ -112,7 +140,7 @@ router.post('/login', async (req, res) => {
     const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordMatch) {
-      return res.status(401).json({ error: 'Email o contraseña incorrectos' });
+      return res.status(401).json({ error: 'Username/Email o contraseña incorrectos' });
     }
 
     // Generar tokens
@@ -140,6 +168,7 @@ router.post('/login', async (req, res) => {
       message: 'Login exitoso',
       user: {
         userId: user.user_id,
+        username: user.username,
         email: user.email,
       },
       tokens: {
@@ -243,7 +272,7 @@ router.get('/me', async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    const userQuery = 'SELECT user_id, email, created_at FROM users WHERE user_id = $1';
+    const userQuery = 'SELECT user_id, username, email, created_at FROM users WHERE user_id = $1';
     const userResult = await pool.query(userQuery, [decoded.userId]);
 
     if (userResult.rows.length === 0) {
@@ -253,6 +282,7 @@ router.get('/me', async (req, res) => {
     res.json({
       user: {
         userId: userResult.rows[0].user_id,
+        username: userResult.rows[0].username,
         email: userResult.rows[0].email,
         createdAt: userResult.rows[0].created_at,
       },

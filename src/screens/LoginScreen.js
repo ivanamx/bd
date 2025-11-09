@@ -18,7 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function LoginScreen({ navigation }) {
   const theme = useTheme();
   const { signIn, authenticateWithBiometrics, checkBiometricAvailability } = useAuth();
-  const [email, setEmail] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -34,13 +34,13 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
+    if (!usernameOrEmail.trim() || !password.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
     setLoading(true);
-    const result = await signIn(email.trim(), password);
+    const result = await signIn(usernameOrEmail.trim(), password);
     setLoading(false);
 
     if (!result.success) {
@@ -77,18 +77,17 @@ export default function LoginScreen({ navigation }) {
         <View style={styles.form}>
           <View style={styles.inputContainer}>
             <Ionicons
-              name="mail-outline"
+              name="person-outline"
               size={20}
               color={theme.colors.textMuted}
               style={styles.inputIcon}
             />
             <TextInput
               style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
-              placeholder="Email"
+              placeholder="Username o Email"
               placeholderTextColor={theme.colors.textMuted}
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
+              value={usernameOrEmail}
+              onChangeText={setUsernameOrEmail}
               autoCapitalize="none"
               autoCorrect={false}
             />

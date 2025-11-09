@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function RegisterScreen({ navigation }) {
   const theme = useTheme();
   const { signUp } = useAuth();
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,8 +27,13 @@ export default function RegisterScreen({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleRegister = async () => {
-    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+    if (!username.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    if (username.trim().length < 3) {
+      Alert.alert('Error', 'El username debe tener al menos 3 caracteres');
       return;
     }
 
@@ -42,7 +48,7 @@ export default function RegisterScreen({ navigation }) {
     }
 
     setLoading(true);
-    const result = await signUp(email.trim(), password);
+    const result = await signUp(username.trim(), email.trim(), password);
     setLoading(false);
 
     if (!result.success) {
@@ -70,6 +76,24 @@ export default function RegisterScreen({ navigation }) {
         </View>
 
         <View style={styles.form}>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="person-outline"
+              size={20}
+              color={theme.colors.textMuted}
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={[styles.input, { color: theme.colors.text, borderColor: theme.colors.border }]}
+              placeholder="Username"
+              placeholderTextColor={theme.colors.textMuted}
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
           <View style={styles.inputContainer}>
             <Ionicons
               name="mail-outline"

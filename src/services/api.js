@@ -185,20 +185,20 @@ export const getStatistics = async () => {
 /**
  * Registrar nuevo usuario
  */
-export const register = async (email, password) => {
+export const register = async (username, email, password) => {
   return fetchAPI('/auth/register', {
     method: 'POST',
-    body: { email, password },
+    body: { username, email, password },
   });
 };
 
 /**
- * Iniciar sesión
+ * Iniciar sesión (acepta username o email)
  */
-export const login = async (email, password) => {
+export const login = async (usernameOrEmail, password) => {
   return fetchAPI('/auth/login', {
     method: 'POST',
-    body: { email, password },
+    body: { usernameOrEmail, password },
   });
 };
 

@@ -77,10 +77,10 @@ export default function CatalystsScreen({ navigation }) {
       setNewEdad('');
       setShowAddForm(false);
       loadCatalysts();
-      Alert.alert('Éxito', 'Catalizador creado correctamente');
+      Alert.alert('Éxito', 'Top creado correctamente');
     } catch (error) {
       console.error('Error creating catalyst:', error);
-      const errorMessage = error.message || 'No se pudo crear el catalizador';
+      const errorMessage = error.message || 'No se pudo crear el top';
       Alert.alert('Error', errorMessage);
     } finally {
       setSubmitting(false);
@@ -89,44 +89,71 @@ export default function CatalystsScreen({ navigation }) {
 
   const renderCatalystItem = ({ item }) => {
     const formattedDate = format(new Date(item.fecha_registro), "d 'de' MMMM, yyyy", { locale: es });
+    const rating = item.rating_promedio ? parseFloat(item.rating_promedio).toFixed(1) : '0.0';
 
     return (
-      <View style={[styles.catalystCard, { backgroundColor: theme.colors.surface }]}>
+      <View style={[styles.catalystCard, { 
+        backgroundColor: theme.colors.surface,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+      }]}>
         <View style={styles.cardHeader}>
-          <Text style={[styles.aliasText, { color: theme.colors.primary }]}>
-            {item.alias}
-          </Text>
-          <View style={[styles.ratingBadge, { backgroundColor: theme.colors.primary + '20' }]}>
+          <View style={styles.aliasContainer}>
+            <View style={[styles.iconCircle, { backgroundColor: theme.colors.primary + '20' }]}>
+              <Ionicons name="person" size={24} color={theme.colors.primary} />
+            </View>
+            <Text style={[styles.aliasText, { color: theme.colors.text }]}>
+              {item.alias}
+            </Text>
+          </View>
+          <View style={[styles.ratingBadge, { backgroundColor: theme.colors.primary + '15' }]}>
+            <Ionicons name="star" size={16} color={theme.colors.primary} />
             <Text style={[styles.ratingText, { color: theme.colors.primary }]}>
-              {item.rating_promedio ? parseFloat(item.rating_promedio).toFixed(1) : '0.0'}
+              {rating}
             </Text>
           </View>
         </View>
         
-        <View style={styles.detailsRow}>
-          {item.cuerpo && (
-            <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Cuerpo:</Text>
-              <Text style={[styles.detailValue, { color: theme.colors.textSecondary }]}>{item.cuerpo}</Text>
-            </View>
-          )}
-          {item.cara && (
-            <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Cara:</Text>
-              <Text style={[styles.detailValue, { color: theme.colors.textSecondary }]}>{item.cara}</Text>
-            </View>
-          )}
-          {item.edad && (
-            <View style={styles.detailItem}>
-              <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Edad:</Text>
-              <Text style={[styles.detailValue, { color: theme.colors.textSecondary }]}>{item.edad}</Text>
-            </View>
-          )}
-        </View>
+        {(item.cuerpo || item.cara || item.edad) && (
+          <View style={styles.detailsContainer}>
+            {item.cuerpo && (
+              <View style={[styles.detailChip, { backgroundColor: theme.colors.primary + '10', borderColor: theme.colors.primary + '30' }]}>
+                <Ionicons name="body-outline" size={16} color={theme.colors.primary} />
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                  {item.cuerpo.charAt(0).toUpperCase() + item.cuerpo.slice(1)}
+                </Text>
+              </View>
+            )}
+            {item.cara && (
+              <View style={[styles.detailChip, { backgroundColor: theme.colors.primary + '10', borderColor: theme.colors.primary + '30' }]}>
+                <Ionicons name="happy-outline" size={16} color={theme.colors.primary} />
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                  {item.cara.charAt(0).toUpperCase() + item.cara.slice(1)}
+                </Text>
+              </View>
+            )}
+            {item.edad && (
+              <View style={[styles.detailChip, { backgroundColor: theme.colors.primary + '10', borderColor: theme.colors.primary + '30' }]}>
+                <Ionicons name="calendar-outline" size={16} color={theme.colors.primary} />
+                <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                  {item.edad} años
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
         
-        <Text style={[styles.dateText, { color: theme.colors.textMuted }]}>
-          Registrado: {formattedDate}
-        </Text>
+        <View style={styles.cardFooter}>
+          <View style={styles.dateContainer}>
+            <Ionicons name="time-outline" size={14} color={theme.colors.textMuted} />
+            <Text style={[styles.dateText, { color: theme.colors.textMuted }]}>
+              {formattedDate}
+            </Text>
+          </View>
+        </View>
       </View>
     );
   };
@@ -144,7 +171,7 @@ export default function CatalystsScreen({ navigation }) {
       {showAddForm && (
         <View style={[styles.addForm, { backgroundColor: theme.colors.surfaceElevated }]}>
           <Text style={[styles.formTitle, { color: theme.colors.text }]}>
-            Nuevo Catalizador
+            Nuevo Top
           </Text>
           
           <TextInput
@@ -226,7 +253,7 @@ export default function CatalystsScreen({ navigation }) {
           <View style={styles.emptyContainer}>
             <Ionicons name="people-outline" size={64} color={theme.colors.textMuted} />
             <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
-              No hay catalizadores registrados
+              No hay tops registrados
             </Text>
           </View>
         }
@@ -258,55 +285,81 @@ const styles = StyleSheet.create({
     paddingBottom: 100,
   },
   catalystCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 20,
-    marginBottom: 12,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+  },
+  aliasContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: 12,
+  },
+  iconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   aliasText: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
     flex: 1,
     letterSpacing: 0.3,
   },
   ratingBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    minWidth: 50,
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    gap: 6,
   },
   ratingText: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
   },
-  detailsRow: {
+  detailsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
-    marginBottom: 8,
-    gap: 12,
+    gap: 8,
+    marginBottom: 16,
   },
-  detailItem: {
+  detailChip: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  detailLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginRight: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
   },
   detailValue: {
     fontSize: 14,
+    fontWeight: '500',
+  },
+  cardFooter: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   dateText: {
-    fontSize: 12,
-    marginTop: 8,
+    fontSize: 13,
+    fontWeight: '400',
   },
   addForm: {
     margin: 16,

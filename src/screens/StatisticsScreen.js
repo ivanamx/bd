@@ -306,7 +306,6 @@ export default function StatisticsScreen({ navigation }) {
     );
   }
 
-  const maxRating = Math.max(...(statistics.ratingDistribution?.map(r => r.cantidad) || [0]));
   const maxLugares = Math.max(...(statistics.topLugares?.map(l => l.veces) || [0]));
   const maxMonthly = Math.max(...(statistics.monthlyActivity?.map(m => m.cantidad) || [0]));
 
@@ -381,14 +380,6 @@ export default function StatisticsScreen({ navigation }) {
           theme={theme}
         />
       </View>
-
-      {/* Distribución de ratings */}
-      {renderBarChart(
-        statistics.ratingDistribution,
-        'Distribución de Ratings',
-        '#ffd93d',
-        maxRating
-      )}
 
       {/* Top 5 Tops más frecuentes */}
       {renderTopList(

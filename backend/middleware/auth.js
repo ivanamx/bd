@@ -16,7 +16,7 @@ const authenticateToken = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Verificar que el usuario existe en la base de datos
-    const userQuery = 'SELECT user_id, email FROM users WHERE user_id = $1';
+    const userQuery = 'SELECT user_id, username, email FROM users WHERE user_id = $1';
     const userResult = await pool.query(userQuery, [decoded.userId]);
     
     if (userResult.rows.length === 0) {
@@ -26,6 +26,7 @@ const authenticateToken = async (req, res, next) => {
     // Agregar información del usuario al request
     req.user = {
       userId: decoded.userId,
+      username: userResult.rows[0].username,
       email: userResult.rows[0].email,
     };
 
