@@ -10,6 +10,8 @@ import {
   ScrollView,
   Modal,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { getEncounters, getScheduledEncounters, getCatalysts } from '../services/api';
@@ -42,6 +44,8 @@ export default function EncountersListScreen({ navigation }) {
   const [selectedCatalystId, setSelectedCatalystId] = useState(null);
   const [showAIModal, setShowAIModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [historyFilter, setHistoryFilter] = useState('todos');
+  const [showFilterModal, setShowFilterModal] = useState(false);
 
   useEffect(() => {
     loadEncounters();
@@ -90,9 +94,29 @@ export default function EncountersListScreen({ navigation }) {
   // - Los encuentros de la tabla "scheduled_encounters" (creados con "Programar") van a PRÓXIMOS
   
   // Todos los encuentros de "encounters" van al historial (ordenados por fecha descendente)
-  const pastEncounters = encounters.sort((a, b) => 
+  const allPastEncounters = encounters.sort((a, b) => 
     new Date(b.fecha_encuentro) - new Date(a.fecha_encuentro)
   );
+
+  // Filtrar encuentros según el filtro seleccionado
+  const getFilteredEncounters = () => {
+    if (historyFilter === 'este-mes') {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      return allPastEncounters.filter(enc => 
+        new Date(enc.fecha_encuentro) >= startOfMonth
+      );
+    }
+    return allPastEncounters;
+  };
+
+  const pastEncounters = getFilteredEncounters();
+
+  // Obtener etiqueta del filtro
+  const getFilterLabel = () => {
+    if (historyFilter === 'este-mes') return 'Este mes';
+    return 'Todos';
+  };
   
   // Todos los encuentros programados van a próximos (ordenados por fecha ascendente)
   const allUpcoming = scheduledEncounters.sort(
@@ -243,9 +267,41 @@ export default function EncountersListScreen({ navigation }) {
 
         {/* Sección de Historial */}
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Historial
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Historial ({pastEncounters.length})
+            </Text>
+            <TouchableOpacity
+              style={[styles.filterBadge, { 
+                backgroundColor: historyFilter !== 'todos' 
+                  ? theme.colors.primary + '20' 
+                  : theme.colors.surface,
+                borderColor: historyFilter !== 'todos' 
+                  ? theme.colors.primary 
+                  : theme.colors.border,
+              }]}
+              onPress={() => setShowFilterModal(true)}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name="filter" 
+                size={16} 
+                color={historyFilter !== 'todos' 
+                  ? theme.colors.primary 
+                  : theme.colors.textSecondary} 
+              />
+              <Text style={[
+                styles.filterBadgeText,
+                { 
+                  color: historyFilter !== 'todos' 
+                    ? theme.colors.primary 
+                    : theme.colors.textSecondary 
+                }
+              ]}>
+                {getFilterLabel()}
+              </Text>
+            </TouchableOpacity>
+          </View>
           {pastEncounters.length > 0 ? (
             <View style={styles.sectionContent}>
               {pastEncounters.map((item) => (
@@ -294,19 +350,24 @@ export default function EncountersListScreen({ navigation }) {
           setSelectedCatalystId(null);
         }}
       >
-        <TouchableOpacity
-          style={styles.menuOverlay}
-          activeOpacity={1}
-          onPress={() => {
-            setShowAISelectorModal(false);
-            setSearchQuery('');
-            setSelectedCatalystId(null);
-          }}
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <View 
-            style={[styles.aiSelectorContent, { backgroundColor: theme.colors.surfaceElevated }]}
-            onStartShouldSetResponder={() => true}
+          <TouchableOpacity
+            style={styles.aiSelectorOverlay}
+            activeOpacity={1}
+            onPress={() => {
+              setShowAISelectorModal(false);
+              setSearchQuery('');
+              setSelectedCatalystId(null);
+            }}
           >
+            <View 
+              style={[styles.aiSelectorContent, { backgroundColor: theme.colors.surfaceElevated }]}
+              onStartShouldSetResponder={() => true}
+            >
             <View style={[styles.aiSelectorHeader, { borderBottomColor: theme.colors.border }]}>
               <Ionicons name="sparkles" size={24} color={theme.colors.primary} />
               <Text style={[styles.aiSelectorTitle, { color: theme.colors.text }]}>
@@ -451,6 +512,7 @@ export default function EncountersListScreen({ navigation }) {
             </ScrollView>
           </View>
         </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* Modal de Análisis IA */}
@@ -463,6 +525,108 @@ export default function EncountersListScreen({ navigation }) {
         formData={{}}
         catalystId={selectedCatalystId}
       />
+
+      {/* Modal de filtro de historial */}
+      <Modal
+        visible={showFilterModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => setShowFilterModal(false)}
+        >
+          <View style={[styles.filterModalContent, { backgroundColor: theme.colors.surfaceElevated }]}>
+            <View style={[styles.filterModalHeader, { borderBottomColor: theme.colors.border }]}>
+              <Text style={[styles.filterModalTitle, { color: theme.colors.text }]}>
+                Filtrar Historial
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowFilterModal(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity
+              style={[
+                styles.filterOption,
+                {
+                  backgroundColor: historyFilter === 'todos' 
+                    ? theme.colors.primary + '20' 
+                    : theme.colors.surface,
+                  borderColor: historyFilter === 'todos' 
+                    ? theme.colors.primary 
+                    : theme.colors.border,
+                }
+              ]}
+              onPress={() => {
+                setHistoryFilter('todos');
+                setShowFilterModal(false);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name="list" 
+                size={20} 
+                color={historyFilter === 'todos' 
+                  ? theme.colors.primary 
+                  : theme.colors.textSecondary} 
+              />
+              <Text style={[
+                styles.filterOptionText,
+                { 
+                  color: historyFilter === 'todos' 
+                    ? theme.colors.primary 
+                    : theme.colors.text 
+                }
+              ]}>
+                Todos
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.filterOption,
+                {
+                  backgroundColor: historyFilter === 'este-mes' 
+                    ? theme.colors.primary + '20' 
+                    : theme.colors.surface,
+                  borderColor: historyFilter === 'este-mes' 
+                    ? theme.colors.primary 
+                    : theme.colors.border,
+                }
+              ]}
+              onPress={() => {
+                setHistoryFilter('este-mes');
+                setShowFilterModal(false);
+              }}
+              activeOpacity={0.7}
+            >
+              <Ionicons 
+                name="calendar" 
+                size={20} 
+                color={historyFilter === 'este-mes' 
+                  ? theme.colors.primary 
+                  : theme.colors.textSecondary} 
+              />
+              <Text style={[
+                styles.filterOptionText,
+                { 
+                  color: historyFilter === 'este-mes' 
+                    ? theme.colors.primary 
+                    : theme.colors.text 
+                }
+              ]}>
+                Este mes
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Modal de opciones */}
       <Modal
@@ -526,11 +690,29 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 24,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 22,
     fontWeight: '600',
-    marginBottom: 16,
     letterSpacing: 0.5,
+  },
+  filterBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 6,
+  },
+  filterBadgeText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   sectionContent: {
     gap: 12,
@@ -658,6 +840,16 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingBottom: 100,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
+  aiSelectorOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    paddingTop: 60,
+    paddingBottom: 40,
+  },
   menuContent: {
     marginHorizontal: 20,
     borderRadius: 20,
@@ -677,7 +869,7 @@ const styles = StyleSheet.create({
   aiSelectorContent: {
     marginHorizontal: 20,
     borderRadius: 20,
-    maxHeight: '70%',
+    maxHeight: '80%',
     overflow: 'hidden',
   },
   aiSelectorHeader: {
@@ -748,6 +940,36 @@ const styles = StyleSheet.create({
   emptyCatalystText: {
     marginTop: 16,
     fontSize: 16,
+  },
+  filterModalContent: {
+    marginHorizontal: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  filterModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  filterModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  filterOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  filterOptionText: {
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

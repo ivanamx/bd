@@ -32,38 +32,56 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
   }, [visible, catalystId]);
 
   useEffect(() => {
-    if (loading) {
-      // Animar la barra de progreso
-      const interval = setInterval(() => {
-        setProgress(prev => {
-          if (prev >= 90) return prev; // No pasar de 90% hasta que termine
-          return prev + Math.random() * 15; // Incremento aleatorio para simular progreso
-        });
-      }, 300);
-
-      return () => clearInterval(interval);
-    } else {
-      setProgress(0);
-    }
-  }, [loading]);
-
-  useEffect(() => {
     Animated.timing(progressAnim, {
       toValue: progress,
-      duration: 300,
+      duration: 200,
       useNativeDriver: false,
     }).start();
   }, [progress]);
 
+  const updateProgress = (value) => {
+    setProgress(Math.min(100, Math.max(0, value)));
+  };
+
   const loadAnalysis = async () => {
     try {
       setLoading(true);
-      setProgress(10);
+      updateProgress(5);
       
+      // Etapa 1: Preparando solicitud (5-15%)
+      await new Promise(resolve => setTimeout(resolve, 200));
+      updateProgress(15);
+      
+      // Etapa 2: Obteniendo datos del backend (15-40%)
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 40) {
+            return Math.min(40, prev + 2); // Incremento gradual hasta 40%
+          }
+          return prev;
+        });
+      }, 150);
+
       const data = await getAIAnalysis(catalystId, formData);
       
-      setProgress(100);
-      await new Promise(resolve => setTimeout(resolve, 300)); // Esperar un momento para mostrar 100%
+      clearInterval(progressInterval);
+      
+      // Etapa 3: Procesando respuesta de IA (40-70%)
+      updateProgress(40);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      updateProgress(50);
+      
+      // Etapa 4: Validando y estructurando datos (70-90%)
+      await new Promise(resolve => setTimeout(resolve, 100));
+      updateProgress(70);
+      await new Promise(resolve => setTimeout(resolve, 100));
+      updateProgress(85);
+      
+      // Etapa 5: Finalizando (90-100%)
+      updateProgress(90);
+      await new Promise(resolve => setTimeout(resolve, 150));
+      updateProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 200)); // Mostrar 100% brevemente
       
       if (data && (data.suggestion || data.patterns || data.insights)) {
         setAnalysis(data);
@@ -75,31 +93,13 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
       Alert.alert('Error', error.message || 'No se pudo cargar el análisis de IA. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
-      setProgress(0);
+      // Mantener el progreso en 100% por un momento antes de resetear
+      setTimeout(() => {
+        setProgress(0);
+      }, 500);
     }
   };
 
-  const handleApplySuggestions = (suggestions) => {
-    if (suggestions && typeof onClose === 'function') {
-      // El componente padre recibirá las sugerencias a través de un callback
-      Alert.alert(
-        'Aplicar Sugerencias',
-        '¿Deseas aplicar estas sugerencias al formulario?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          {
-            text: 'Aplicar',
-            onPress: () => {
-              // Las sugerencias se aplicarán desde el componente padre
-              onClose(suggestions);
-            },
-          },
-        ]
-      );
-    } else {
-      onClose();
-    }
-  };
 
   const renderSuggestionTab = () => {
     if (!analysis?.suggestion) return null;
@@ -274,15 +274,6 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
             </View>
           </View>
         )}
-
-        <TouchableOpacity
-          style={[styles.applyButton, { backgroundColor: theme.colors.primary }]}
-          onPress={() => handleApplySuggestions(suggestion)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="checkmark-circle" size={20} color="#fff" />
-          <Text style={styles.applyButtonText}>Aplicar Sugerencias</Text>
-        </TouchableOpacity>
       </ScrollView>
     );
   };
@@ -670,20 +661,6 @@ const styles = StyleSheet.create({
   suggestionValue: {
     fontSize: 16,
     fontWeight: '500',
-  },
-  applyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 24,
-    gap: 8,
-  },
-  applyButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
   },
   patternCard: {
     padding: 16,

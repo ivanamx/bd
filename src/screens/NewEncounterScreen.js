@@ -181,75 +181,8 @@ export default function NewEncounterScreen({ navigation, route }) {
     setShowAIModal(true);
   };
 
-  const handleCloseAIModal = (suggestions) => {
+  const handleCloseAIModal = () => {
     setShowAIModal(false);
-    if (suggestions) {
-      applySuggestions(suggestions);
-    }
-  };
-
-  const applySuggestions = (suggestions) => {
-    const updatedFormData = { ...formData };
-
-    // Aplicar lugar si está disponible
-    if (suggestions.lugar_encuentro) {
-      const lugarOption = LUGAR_ENCUENTRO_OPTIONS.find(
-        opt => opt.label === suggestions.lugar_encuentro || opt.value === suggestions.lugar_encuentro
-      );
-      if (lugarOption) {
-        updatedFormData.lugar_encuentro = lugarOption.value;
-      }
-    }
-
-    // Aplicar posiciones si están disponibles
-    if (suggestions.posiciones && suggestions.posiciones.length > 0) {
-      const posicionesArray = Array.isArray(suggestions.posiciones) 
-        ? suggestions.posiciones 
-        : [suggestions.posiciones];
-      updatedFormData.posiciones = posicionesArray.join(', ');
-    }
-
-    // Aplicar ropa si está disponible
-    if (suggestions.ropa) {
-      const ropaOption = ROPA_OPTIONS.find(
-        opt => opt.label === suggestions.ropa || opt.value === suggestions.ropa
-      );
-      if (ropaOption) {
-        updatedFormData.ropa = ropaOption.value;
-      }
-    }
-
-    // Aplicar duración si está disponible
-    if (suggestions.duracion_min) {
-      updatedFormData.duracion_min = parseInt(suggestions.duracion_min) || updatedFormData.duracion_min;
-    }
-
-    // Aplicar fecha si está disponible (parsear desde string)
-    if (suggestions.fecha_encuentro) {
-      try {
-        // Intentar parsear la fecha del formato español
-        const fechaMatch = suggestions.fecha_encuentro.match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4}),\s+(\d{1,2}):(\d{2})/);
-        if (fechaMatch) {
-          const meses = {
-            'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3, 'mayo': 4, 'junio': 5,
-            'julio': 6, 'agosto': 7, 'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
-          };
-          const dia = parseInt(fechaMatch[1]);
-          const mes = meses[fechaMatch[2].toLowerCase()];
-          const año = parseInt(fechaMatch[3]);
-          const hora = parseInt(fechaMatch[4]);
-          const minuto = parseInt(fechaMatch[5]);
-          if (mes !== undefined) {
-            updatedFormData.fecha_encuentro = new Date(año, mes, dia, hora, minuto);
-          }
-        }
-      } catch (e) {
-        console.log('No se pudo parsear la fecha sugerida:', e);
-      }
-    }
-
-    setFormData(updatedFormData);
-    Alert.alert('Éxito', 'Sugerencias aplicadas al formulario');
   };
 
   return (

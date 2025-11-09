@@ -55,7 +55,7 @@ export default function MainNavigator() {
       <Stack.Screen
         name="Catalysts"
         component={CatalystsScreen}
-        options={{ title: 'Catalizadores' }}
+        options={{ title: 'Tops' }}
       />
     </Stack.Navigator>
   );
