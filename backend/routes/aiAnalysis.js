@@ -298,18 +298,19 @@ Este encuentro será especial, porque has elegido cada detalle con cuidado, has 
   };
 }
 
-// Función para llamar a API de IA (OpenAI, Claude, etc.)
+// Función para llamar a API de IA (Google Gemini)
 async function callAIService(analysisData, formData) {
   // Verificar si hay API key configurada
-  if (!process.env.OPENAI_API_KEY) {
-    console.log('⚠️ OPENAI_API_KEY no configurada, usando análisis básico');
+  if (!process.env.GOOGLE_AI_API_KEY) {
+    console.log('⚠️ GOOGLE_AI_API_KEY no configurada, usando análisis básico');
     return null;
   }
 
   try {
-    const OpenAI = require('openai');
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
+    const model = genAI.getGenerativeModel({ 
+      model: process.env.GOOGLE_AI_MODEL || 'gemini-pro' 
     });
 
     // Preparar historial detallado de encuentros pasados
@@ -401,26 +402,29 @@ Proporciona un análisis ÚNICO y PERSONALIZADO en formato JSON con esta estruct
   ]
 }
 
-RECUERDA: Esta respuesta debe ser COMPLETAMENTE DIFERENTE a cualquier análisis anterior. Varía el estilo, las sugerencias, los detalles, y la estructura del relato.`;
+RECUERDA: Esta respuesta debe ser COMPLETAMENTE DIFERENTE a cualquier análisis anterior. Varía el estilo, las sugerencias, los detalles, y la estructura del relato.
 
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "Eres un consultor íntimo experto y discreto. Analizas historiales de encuentros para crear sugerencias únicas, personalizadas y variadas. Cada respuesta debe ser completamente diferente, creativa y basada en análisis profundo de datos. Eres profesional, respetuoso y detallado."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      temperature: 0.9, // Aumentado para más creatividad y variedad
-      max_tokens: 2500, // Aumentado para relatos más largos y detallados
-      top_p: 0.95, // Para más diversidad en las respuestas
+IMPORTANTE: Responde SOLO con el JSON, sin texto adicional antes o después. El JSON debe ser válido y parseable.`;
+
+    const systemInstruction = "Eres un consultor íntimo experto y discreto. Analizas historiales de encuentros para crear sugerencias únicas, personalizadas y variadas. Cada respuesta debe ser completamente diferente, creativa y basada en análisis profundo de datos. Eres profesional, respetuoso y detallado. Siempre responde en formato JSON válido.";
+
+    // Combinar instrucción del sistema con el prompt
+    const fullPrompt = `${systemInstruction}\n\n${prompt}`;
+
+    const result = await model.generateContent({
+      contents: [{ 
+        parts: [{ text: fullPrompt }] 
+      }],
+      generationConfig: {
+        temperature: 0.9, // Para más creatividad y variedad
+        topP: 0.95, // Para más diversidad en las respuestas
+        topK: 40,
+        maxOutputTokens: 4096, // Para relatos más largos y detallados
+      },
     });
 
-    const responseText = completion.choices[0].message.content;
+    const response = await result.response;
+    const responseText = response.text();
     console.log('🤖 Respuesta de IA recibida (primeros 500 chars):', responseText.substring(0, 500));
     
     // Intentar parsear JSON de la respuesta
@@ -433,9 +437,9 @@ RECUERDA: Esta respuesta debe ser COMPLETAMENTE DIFERENTE a cualquier análisis 
     console.log('⚠️ No se pudo extraer JSON de la respuesta');
     return null;
   } catch (error) {
-    console.error('❌ Error calling OpenAI:', error.message);
+    console.error('❌ Error calling Google Gemini:', error.message);
     // Si es error de API key o modelo, retornar null para usar análisis básico
-    if (error.message.includes('API key') || error.message.includes('model')) {
+    if (error.message.includes('API key') || error.message.includes('API_KEY') || error.message.includes('model')) {
       console.log('⚠️ Error de configuración de IA, usando análisis básico');
     }
     return null;

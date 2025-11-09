@@ -69,7 +69,7 @@ const ROPA_OPTIONS = [
   { label: 'Boxer', value: 'Boxer' },
 ];
 
-export default function NewEncounterScreen({ navigation }) {
+export default function NewEncounterScreen({ navigation, route }) {
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [catalysts, setCatalysts] = useState([]);
@@ -98,6 +98,25 @@ export default function NewEncounterScreen({ navigation }) {
   useEffect(() => {
     loadCatalysts();
   }, []);
+
+  // Verificar si se debe abrir el modal de IA automáticamente
+  useEffect(() => {
+    const shouldOpenAI = route?.params?.openAI || false;
+    if (shouldOpenAI) {
+      // Esperar un momento para que el componente se monte completamente
+      setTimeout(() => {
+        if (!formData.catalyst_id) {
+          Alert.alert(
+            'Análisis IA',
+            'Por favor selecciona un Top primero para ver el análisis de IA',
+            [{ text: 'OK' }]
+          );
+        } else {
+          setShowAIModal(true);
+        }
+      }, 500);
+    }
+  }, [route?.params?.openAI, formData.catalyst_id]);
 
   const loadCatalysts = async () => {
     try {
@@ -456,20 +475,6 @@ export default function NewEncounterScreen({ navigation }) {
       </View>
 
       <TouchableOpacity
-        style={[styles.aiButton, { 
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.primary,
-        }]}
-        onPress={handleOpenAIModal}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="sparkles" size={24} color={theme.colors.primary} />
-        <Text style={[styles.aiButtonText, { color: theme.colors.primary }]}>
-          Análisis IA
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
         style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
         onPress={handleSubmit}
         disabled={loading}
@@ -583,26 +588,6 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     marginTop: 4,
-  },
-  aiButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 18,
-    borderRadius: 16,
-    borderWidth: 2,
-    marginTop: 20,
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
-  },
-  aiButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    letterSpacing: 0.5,
   },
   submitButton: {
     padding: 18,

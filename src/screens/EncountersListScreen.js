@@ -248,6 +248,19 @@ export default function EncountersListScreen({ navigation }) {
         </View>
       </ScrollView>
       
+      {/* Botón flotante de IA */}
+      <TouchableOpacity
+        style={[styles.fabAI, { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary }]}
+        onPress={() => {
+          // Navegar a NewEncounter y abrir el modal de IA
+          navigation.navigate('NewEncounter', { openAI: true });
+        }}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="sparkles" size={28} color={theme.colors.primary} />
+      </TouchableOpacity>
+
+      {/* Botón flotante Agregar */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
         onPress={() => setShowMenuModal(true)}
@@ -418,6 +431,22 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  fabAI: {
+    position: 'absolute',
+    right: 20,
+    bottom: 100,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
