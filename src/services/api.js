@@ -112,6 +112,25 @@ export const createCatalyst = async (catalystData) => {
   });
 };
 
+/**
+ * Actualizar un catalizador
+ */
+export const updateCatalyst = async (catalystId, catalystData) => {
+  return fetchAPI(`/catalysts/${catalystId}`, {
+    method: 'PUT',
+    body: catalystData,
+  });
+};
+
+/**
+ * Eliminar un catalizador
+ */
+export const deleteCatalyst = async (catalystId) => {
+  return fetchAPI(`/catalysts/${catalystId}`, {
+    method: 'DELETE',
+  });
+};
+
 // ==================== ENCUENTROS ====================
 
 /**
@@ -138,6 +157,25 @@ export const createEncounter = async (encounterData) => {
   });
 };
 
+/**
+ * Actualizar un encuentro
+ */
+export const updateEncounter = async (encounterId, encounterData) => {
+  return fetchAPI(`/encounters/${encounterId}`, {
+    method: 'PUT',
+    body: encounterData,
+  });
+};
+
+/**
+ * Eliminar un encuentro
+ */
+export const deleteEncounter = async (encounterId) => {
+  return fetchAPI(`/encounters/${encounterId}`, {
+    method: 'DELETE',
+  });
+};
+
 // ==================== ENCUENTROS PROGRAMADOS ====================
 
 /**
@@ -154,6 +192,34 @@ export const createScheduledEncounter = async (scheduledData) => {
   return fetchAPI('/scheduled-encounters', {
     method: 'POST',
     body: scheduledData,
+  });
+};
+
+/**
+ * Actualizar un encuentro programado
+ */
+export const updateScheduledEncounter = async (scheduledEncounterId, scheduledData) => {
+  return fetchAPI(`/scheduled-encounters/${scheduledEncounterId}`, {
+    method: 'PUT',
+    body: scheduledData,
+  });
+};
+
+/**
+ * Marcar un encuentro programado como completado
+ */
+export const completeScheduledEncounter = async (scheduledEncounterId) => {
+  return fetchAPI(`/scheduled-encounters/${scheduledEncounterId}/complete`, {
+    method: 'PATCH',
+  });
+};
+
+/**
+ * Eliminar un encuentro programado
+ */
+export const deleteScheduledEncounter = async (scheduledEncounterId) => {
+  return fetchAPI(`/scheduled-encounters/${scheduledEncounterId}`, {
+    method: 'DELETE',
   });
 };
 

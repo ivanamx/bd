@@ -5,18 +5,70 @@ import {
   ScrollView,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { getEncounterById } from '../services/api';
+import { getEncounterById, deleteEncounter } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function EncounterDetailScreen({ route }) {
+export default function EncounterDetailScreen({ route, navigation }) {
   const theme = useTheme();
   const { encounterId } = route.params;
   const [encounter, setEncounter] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Eliminar Encuentro',
+      '¿Estás seguro de que quieres eliminar este encuentro? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteEncounter(encounterId);
+              Alert.alert('Éxito', 'Encuentro eliminado correctamente', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+              ]);
+            } catch (error) {
+              console.error('Error deleting encounter:', error);
+              const errorMessage = error.message || 'No se pudo eliminar el encuentro';
+              Alert.alert('Error', errorMessage);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  React.useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 16, gap: 16 }}>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('NewEncounter', { 
+                encounterId: encounterId,
+                mode: 'edit'
+              });
+            }}
+          >
+            <Ionicons name="pencil" size={24} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleDelete}
+          >
+            <Ionicons name="trash-outline" size={24} color="#ff6b9d" />
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [navigation, encounterId, theme.colors.primary]);
 
   useEffect(() => {
     loadEncounter();

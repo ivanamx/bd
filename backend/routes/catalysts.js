@@ -73,5 +73,79 @@ router.post('/', async (req, res) => {
   }
 });
 
+// PUT /api/catalysts/:id - Actualizar catalizador
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+    const { alias, cuerpo, cara, edad } = req.body;
+
+    // Verificar que el catalizador existe y pertenece al usuario
+    const checkQuery = 'SELECT catalyst_id FROM catalysts WHERE catalyst_id = $1 AND user_id = $2';
+    const checkResult = await pool.query(checkQuery, [id, userId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Catalizador no encontrado' });
+    }
+
+    // Si se cambia el alias, verificar que no existe otro con el mismo alias
+    if (alias) {
+      const aliasCheckQuery = 'SELECT catalyst_id FROM catalysts WHERE alias = $1 AND user_id = $2 AND catalyst_id != $3';
+      const aliasCheck = await pool.query(aliasCheckQuery, [alias, userId, id]);
+      
+      if (aliasCheck.rows.length > 0) {
+        return res.status(400).json({ error: 'El alias ya existe' });
+      }
+    }
+
+    const updateQuery = `
+      UPDATE catalysts SET
+        alias = COALESCE($3, alias),
+        cuerpo = COALESCE($4, cuerpo),
+        cara = COALESCE($5, cara),
+        edad = COALESCE($6, edad)
+      WHERE catalyst_id = $1 AND user_id = $2
+      RETURNING *
+    `;
+
+    const values = [id, userId, alias || null, cuerpo || null, cara || null, edad || null];
+    const result = await pool.query(updateQuery, values);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating catalyst:', error);
+    if (error.code === '23505') {
+      res.status(400).json({ error: 'El alias ya existe' });
+    } else {
+      res.status(500).json({ error: 'Error al actualizar catalizador' });
+    }
+  }
+});
+
+// DELETE /api/catalysts/:id - Eliminar catalizador
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.userId;
+
+    // Verificar que el catalizador existe y pertenece al usuario
+    const checkQuery = 'SELECT catalyst_id FROM catalysts WHERE catalyst_id = $1 AND user_id = $2';
+    const checkResult = await pool.query(checkQuery, [id, userId]);
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Catalizador no encontrado' });
+    }
+
+    // Eliminar el catalizador (los encuentros se eliminarán en cascada por ON DELETE CASCADE)
+    const deleteQuery = 'DELETE FROM catalysts WHERE catalyst_id = $1 AND user_id = $2';
+    await pool.query(deleteQuery, [id, userId]);
+
+    res.json({ message: 'Catalizador eliminado correctamente' });
+  } catch (error) {
+    console.error('Error deleting catalyst:', error);
+    res.status(500).json({ error: 'Error al eliminar catalizador' });
+  }
+});
+
 module.exports = router;
 

@@ -11,7 +11,7 @@ import {
   Platform,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { createEncounter, getCatalysts } from '../services/api';
+import { createEncounter, updateEncounter, getEncounterById, getCatalysts } from '../services/api';
 import RatingSlider from '../components/RatingSlider';
 import PickerSelect from '../components/PickerSelect';
 import MultiPickerSelect from '../components/MultiPickerSelect';
@@ -124,6 +124,8 @@ export default function NewEncounterScreen({ navigation, route }) {
   const [catalysts, setCatalysts] = useState([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showAIModal, setShowAIModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [encounterId, setEncounterId] = useState(null);
   
   const [formData, setFormData] = useState({
     catalyst_id: null,
@@ -147,7 +149,52 @@ export default function NewEncounterScreen({ navigation, route }) {
 
   useEffect(() => {
     loadCatalysts();
-  }, []);
+    
+    // Verificar si estamos en modo edición
+    if (route?.params?.encounterId && route?.params?.mode === 'edit') {
+      setIsEditMode(true);
+      setEncounterId(route.params.encounterId);
+      loadEncounterForEdit(route.params.encounterId);
+    }
+  }, [route?.params]);
+
+  const loadEncounterForEdit = async (id) => {
+    try {
+      setLoading(true);
+      const encounter = await getEncounterById(id);
+      
+      // Convertir posiciones de string a array si es necesario
+      let posiciones = encounter.posiciones || '';
+      if (typeof posiciones === 'string' && posiciones.includes(',')) {
+        posiciones = posiciones.split(',').map(p => p.trim()).join(',');
+      }
+      
+      setFormData({
+        catalyst_id: encounter.catalyst_id,
+        fecha_encuentro: new Date(encounter.fecha_encuentro),
+        duracion_min: encounter.duracion_min || 60,
+        lugar_encuentro: encounter.lugar_encuentro || '',
+        tamano: encounter.tamano || '',
+        condon: encounter.condon || '',
+        posiciones: posiciones,
+        final: encounter.final || '',
+        ropa: encounter.ropa || '',
+        accesorios: encounter.accesorios || '',
+        score_toma_ruda: encounter.score_toma_ruda || 5,
+        score_acento_ancla: encounter.score_acento_ancla || 5,
+        score_compart: encounter.score_compart || 5,
+        score_oral_mio: encounter.score_oral_mio || 5,
+        score_oral_suyo: encounter.score_oral_suyo || 5,
+        rating_general: parseFloat(encounter.rating_general) || 5.0,
+        notas_detalladas: encounter.notas_detalladas || '',
+      });
+    } catch (error) {
+      console.error('Error loading encounter for edit:', error);
+      Alert.alert('Error', 'No se pudo cargar el encuentro para editar');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Verificar si se debe abrir el modal de IA automáticamente
   useEffect(() => {
@@ -201,13 +248,21 @@ export default function NewEncounterScreen({ navigation, route }) {
         ...formData,
         fecha_encuentro: formData.fecha_encuentro.toISOString(),
       };
-      await createEncounter(encounterData);
-      Alert.alert('Éxito', 'Encuentro registrado correctamente', [
-        { text: 'OK', onPress: () => navigation.goBack() }
-      ]);
+      
+      if (isEditMode) {
+        await updateEncounter(encounterId, encounterData);
+        Alert.alert('Éxito', 'Encuentro actualizado correctamente', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        await createEncounter(encounterData);
+        Alert.alert('Éxito', 'Encuentro registrado correctamente', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      }
     } catch (error) {
-      console.error('Error creating encounter:', error);
-      Alert.alert('Error', 'No se pudo registrar el encuentro');
+      console.error('Error saving encounter:', error);
+      Alert.alert('Error', isEditMode ? 'No se pudo actualizar el encuentro' : 'No se pudo registrar el encuentro');
     } finally {
       setLoading(false);
     }
@@ -474,7 +529,9 @@ export default function NewEncounterScreen({ navigation, route }) {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.submitButtonText}>Registrar Encuentro</Text>
+          <Text style={styles.submitButtonText}>
+            {isEditMode ? 'Actualizar Encuentro' : 'Registrar Encuentro'}
+          </Text>
         )}
       </TouchableOpacity>
 

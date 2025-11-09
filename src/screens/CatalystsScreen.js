@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { getCatalysts, createCatalyst } from '../services/api';
+import { getCatalysts, createCatalyst, updateCatalyst, deleteCatalyst } from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
@@ -40,6 +40,8 @@ export default function CatalystsScreen({ navigation }) {
   const [newCara, setNewCara] = useState('');
   const [newEdad, setNewEdad] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editingCatalyst, setEditingCatalyst] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false);
 
   useEffect(() => {
     loadCatalysts();
@@ -85,6 +87,81 @@ export default function CatalystsScreen({ navigation }) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleEditCatalyst = (catalyst) => {
+    setEditingCatalyst(catalyst);
+    setNewAlias(catalyst.alias);
+    setNewCuerpo(catalyst.cuerpo || '');
+    setNewCara(catalyst.cara || '');
+    setNewEdad(catalyst.edad || '');
+    setShowEditForm(true);
+    setShowAddForm(false);
+  };
+
+  const handleUpdateCatalyst = async () => {
+    if (!newAlias.trim()) {
+      Alert.alert('Error', 'Por favor ingresa un alias');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await updateCatalyst(editingCatalyst.catalyst_id, {
+        alias: newAlias.trim(),
+        cuerpo: newCuerpo || null,
+        cara: newCara || null,
+        edad: newEdad.trim() || null,
+      });
+      setNewAlias('');
+      setNewCuerpo('');
+      setNewCara('');
+      setNewEdad('');
+      setEditingCatalyst(null);
+      setShowEditForm(false);
+      loadCatalysts();
+      Alert.alert('Éxito', 'Top actualizado correctamente');
+    } catch (error) {
+      console.error('Error updating catalyst:', error);
+      const errorMessage = error.message || 'No se pudo actualizar el top';
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteCatalyst = (catalyst) => {
+    Alert.alert(
+      'Eliminar Top',
+      `¿Estás seguro de que quieres eliminar "${catalyst.alias}"? Esta acción también eliminará todos los encuentros relacionados.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteCatalyst(catalyst.catalyst_id);
+              loadCatalysts();
+              Alert.alert('Éxito', 'Top eliminado correctamente');
+            } catch (error) {
+              console.error('Error deleting catalyst:', error);
+              const errorMessage = error.message || 'No se pudo eliminar el top';
+              Alert.alert('Error', errorMessage);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const cancelEdit = () => {
+    setEditingCatalyst(null);
+    setNewAlias('');
+    setNewCuerpo('');
+    setNewCara('');
+    setNewEdad('');
+    setShowEditForm(false);
   };
 
   const renderCatalystItem = ({ item }) => {
@@ -153,6 +230,22 @@ export default function CatalystsScreen({ navigation }) {
               {formattedDate}
             </Text>
           </View>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: theme.colors.primary + '20' }]}
+              onPress={() => handleEditCatalyst(item)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="pencil" size={18} color={theme.colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, { backgroundColor: '#ff6b9d' + '20' }]}
+              onPress={() => handleDeleteCatalyst(item)}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="trash-outline" size={18} color="#ff6b9d" />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     );
@@ -168,10 +261,10 @@ export default function CatalystsScreen({ navigation }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {showAddForm && (
+      {(showAddForm || showEditForm) && (
         <View style={[styles.addForm, { backgroundColor: theme.colors.surfaceElevated }]}>
           <Text style={[styles.formTitle, { color: theme.colors.text }]}>
-            Nuevo Top
+            {showEditForm ? 'Editar Top' : 'Nuevo Top'}
           </Text>
           
           <TextInput
@@ -219,11 +312,15 @@ export default function CatalystsScreen({ navigation }) {
             <TouchableOpacity
               style={[styles.button, styles.cancelButton, { borderColor: theme.colors.border }]}
               onPress={() => {
-                setShowAddForm(false);
-                setNewAlias('');
-                setNewCuerpo('');
-                setNewCara('');
-                setNewEdad('');
+                if (showEditForm) {
+                  cancelEdit();
+                } else {
+                  setShowAddForm(false);
+                  setNewAlias('');
+                  setNewCuerpo('');
+                  setNewCara('');
+                  setNewEdad('');
+                }
               }}
             >
               <Text style={[styles.buttonText, { color: theme.colors.text }]}>Cancelar</Text>
@@ -231,13 +328,13 @@ export default function CatalystsScreen({ navigation }) {
             
             <TouchableOpacity
               style={[styles.button, styles.submitButton, { backgroundColor: theme.colors.primary }]}
-              onPress={handleAddCatalyst}
+              onPress={showEditForm ? handleUpdateCatalyst : handleAddCatalyst}
               disabled={submitting}
             >
               {submitting ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text style={styles.buttonTextWhite}>Crear</Text>
+                <Text style={styles.buttonTextWhite}>{showEditForm ? 'Actualizar' : 'Crear'}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -348,6 +445,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: 'rgba(0,0,0,0.05)',
@@ -360,6 +460,17 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 13,
     fontWeight: '400',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addForm: {
     margin: 16,

@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import { getEncounters, getScheduledEncounters, getCatalysts } from '../services/api';
+import { getEncounters, getScheduledEncounters, getCatalysts, deleteEncounter, deleteScheduledEncounter, completeScheduledEncounter } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { Ionicons } from '@expo/vector-icons';
@@ -190,6 +190,80 @@ export default function EncountersListScreen({ navigation }) {
     );
   };
 
+  const handleDeleteEncounter = (encounter) => {
+    Alert.alert(
+      'Eliminar Encuentro',
+      '¿Estás seguro de que quieres eliminar este encuentro? Esta acción no se puede deshacer.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteEncounter(encounter.encounter_id);
+              loadEncounters();
+              Alert.alert('Éxito', 'Encuentro eliminado correctamente');
+            } catch (error) {
+              console.error('Error deleting encounter:', error);
+              const errorMessage = error.message || 'No se pudo eliminar el encuentro';
+              Alert.alert('Error', errorMessage);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteScheduledEncounter = (scheduledEncounter) => {
+    Alert.alert(
+      'Eliminar Encuentro Programado',
+      '¿Estás seguro de que quieres eliminar este encuentro programado?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteScheduledEncounter(scheduledEncounter.scheduled_encounter_id);
+              loadEncounters();
+              Alert.alert('Éxito', 'Encuentro programado eliminado correctamente');
+            } catch (error) {
+              console.error('Error deleting scheduled encounter:', error);
+              const errorMessage = error.message || 'No se pudo eliminar el encuentro programado';
+              Alert.alert('Error', errorMessage);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleCompleteScheduledEncounter = (scheduledEncounter) => {
+    Alert.alert(
+      'Completar Encuentro',
+      '¿Quieres marcar este encuentro programado como completado?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Completar',
+          onPress: async () => {
+            try {
+              await completeScheduledEncounter(scheduledEncounter.scheduled_encounter_id);
+              loadEncounters();
+              Alert.alert('Éxito', 'Encuentro marcado como completado');
+            } catch (error) {
+              console.error('Error completing scheduled encounter:', error);
+              const errorMessage = error.message || 'No se pudo completar el encuentro';
+              Alert.alert('Error', errorMessage);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const renderEncounterItem = ({ item }) => {
     const formattedDate = format(new Date(item.fecha_encuentro), "d 'de' MMMM, yyyy", { locale: es });
     const isScheduled = !!item.scheduled_encounter_id;
@@ -234,15 +308,45 @@ export default function EncountersListScreen({ navigation }) {
         </View>
         
         <View style={styles.cardFooter}>
-          {!isScheduled && item.tamano && renderSizeIcons(item.tamano)}
-          {item.lugar_encuentro && (
-            <View style={styles.locationContainer}>
-              <Ionicons name="location-outline" size={14} color={theme.colors.textMuted} />
-              <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
-                {item.lugar_encuentro}
-              </Text>
-            </View>
-          )}
+          <View style={styles.cardFooterLeft}>
+            {!isScheduled && item.tamano && renderSizeIcons(item.tamano)}
+            {item.lugar_encuentro && (
+              <View style={styles.locationContainer}>
+                <Ionicons name="location-outline" size={14} color={theme.colors.textMuted} />
+                <Text style={[styles.locationText, { color: theme.colors.textMuted }]}>
+                  {item.lugar_encuentro}
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.actionButtons}>
+            {isScheduled ? (
+              <>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: '#6bcf7f' + '20' }]}
+                  onPress={() => handleCompleteScheduledEncounter(item)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="checkmark-circle-outline" size={18} color="#6bcf7f" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, { backgroundColor: '#ff6b9d' + '20' }]}
+                  onPress={() => handleDeleteScheduledEncounter(item)}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="trash-outline" size={18} color="#ff6b9d" />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: '#ff6b9d' + '20' }]}
+                onPress={() => handleDeleteEncounter(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="trash-outline" size={18} color="#ff6b9d" />
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -805,15 +909,34 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 12,
   },
+  cardFooterLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    marginLeft: 12,
+  },
+  actionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   sizeIconsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 24,
+    minHeight: 30,
+    paddingVertical: 2,
     gap: 4,
   },
   sizeIcon: {
-    lineHeight: 22,
+    lineHeight: 28,
+    textAlignVertical: 'center',
   },
   locationContainer: {
     flexDirection: 'row',
