@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,6 +18,8 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [activeTab, setActiveTab] = useState('suggestion');
+  const [progress, setProgress] = useState(0);
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible && catalystId) {
@@ -25,13 +27,44 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
     } else {
       setAnalysis(null);
       setActiveTab('suggestion');
+      setProgress(0);
     }
   }, [visible, catalystId]);
+
+  useEffect(() => {
+    if (loading) {
+      // Animar la barra de progreso
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) return prev; // No pasar de 90% hasta que termine
+          return prev + Math.random() * 15; // Incremento aleatorio para simular progreso
+        });
+      }, 300);
+
+      return () => clearInterval(interval);
+    } else {
+      setProgress(0);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [progress]);
 
   const loadAnalysis = async () => {
     try {
       setLoading(true);
+      setProgress(10);
+      
       const data = await getAIAnalysis(catalystId, formData);
+      
+      setProgress(100);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Esperar un momento para mostrar 100%
+      
       if (data && (data.suggestion || data.patterns || data.insights)) {
         setAnalysis(data);
       } else {
@@ -42,6 +75,7 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
       Alert.alert('Error', error.message || 'No se pudo cargar el análisis de IA. Por favor intenta de nuevo.');
     } finally {
       setLoading(false);
+      setProgress(0);
     }
   };
 
@@ -241,20 +275,6 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
           </View>
         )}
 
-        {suggestion.relato && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.primary }]}>
-              Relato del Encuentro
-            </Text>
-            <View style={[styles.relatoCard, { backgroundColor: theme.colors.surface }]}>
-              <Ionicons name="book" size={24} color={theme.colors.primary} style={styles.relatoIcon} />
-              <Text style={[styles.relatoText, { color: theme.colors.text }]}>
-                {suggestion.relato}
-              </Text>
-            </View>
-          </View>
-        )}
-
         <TouchableOpacity
           style={[styles.applyButton, { backgroundColor: theme.colors.primary }]}
           onPress={() => handleApplySuggestions(suggestion)}
@@ -395,11 +415,30 @@ export default function AIAnalysisModal({ visible, onClose, formData, catalystId
 
   const renderContent = () => {
     if (loading) {
+      const progressWidth = progressAnim.interpolate({
+        inputRange: [0, 100],
+        outputRange: ['0%', '100%'],
+      });
+
       return (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
+          <Ionicons name="sparkles" size={48} color={theme.colors.primary} />
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
             Analizando datos con IA...
+          </Text>
+          <View style={[styles.progressBarContainer, { backgroundColor: theme.colors.surface }]}>
+            <Animated.View
+              style={[
+                styles.progressBar,
+                {
+                  width: progressWidth,
+                  backgroundColor: theme.colors.primary,
+                },
+              ]}
+            />
+          </View>
+          <Text style={[styles.progressText, { color: theme.colors.textSecondary }]}>
+            {Math.round(progress)}%
           </Text>
         </View>
       );
@@ -549,8 +588,25 @@ const styles = StyleSheet.create({
     padding: 40,
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
+    marginTop: 24,
+    marginBottom: 32,
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  progressBarContainer: {
+    width: '80%',
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 12,
+  },
+  progressBar: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  progressText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,
@@ -738,21 +794,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 15,
     lineHeight: 22,
-  },
-  relatoCard: {
-    padding: 20,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  relatoIcon: {
-    marginBottom: 12,
-    alignSelf: 'flex-start',
-  },
-  relatoText: {
-    fontSize: 16,
-    lineHeight: 26,
-    fontStyle: 'italic',
-    textAlign: 'justify',
   },
 });
 

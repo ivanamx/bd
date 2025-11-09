@@ -9,12 +9,14 @@ import {
   ActivityIndicator,
   ScrollView,
   Modal,
+  TextInput,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { getEncounters, getScheduledEncounters } from '../services/api';
+import { getEncounters, getScheduledEncounters, getCatalysts } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
 import { Ionicons } from '@expo/vector-icons';
+import AIAnalysisModal from '../components/AIAnalysisModal';
 
 export default function EncountersListScreen({ navigation }) {
   React.useLayoutEffect(() => {
@@ -35,10 +37,25 @@ export default function EncountersListScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
+  const [showAISelectorModal, setShowAISelectorModal] = useState(false);
+  const [catalysts, setCatalysts] = useState([]);
+  const [selectedCatalystId, setSelectedCatalystId] = useState(null);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadEncounters();
+    loadCatalysts();
   }, []);
+
+  const loadCatalysts = async () => {
+    try {
+      const data = await getCatalysts();
+      setCatalysts(data);
+    } catch (error) {
+      console.error('Error loading catalysts:', error);
+    }
+  };
 
   const loadEncounters = async () => {
     try {
@@ -251,10 +268,7 @@ export default function EncountersListScreen({ navigation }) {
       {/* Botón flotante de IA */}
       <TouchableOpacity
         style={[styles.fabAI, { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary }]}
-        onPress={() => {
-          // Navegar a NewEncounter y abrir el modal de IA
-          navigation.navigate('NewEncounter', { openAI: true });
-        }}
+        onPress={() => setShowAISelectorModal(true)}
         activeOpacity={0.8}
       >
         <Ionicons name="sparkles" size={28} color={theme.colors.primary} />
@@ -268,6 +282,187 @@ export default function EncountersListScreen({ navigation }) {
       >
         <Ionicons name="add" size={32} color="#fff" />
       </TouchableOpacity>
+
+      {/* Modal de selector de Top para IA */}
+      <Modal
+        visible={showAISelectorModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => {
+          setShowAISelectorModal(false);
+          setSearchQuery('');
+          setSelectedCatalystId(null);
+        }}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={() => {
+            setShowAISelectorModal(false);
+            setSearchQuery('');
+            setSelectedCatalystId(null);
+          }}
+        >
+          <View 
+            style={[styles.aiSelectorContent, { backgroundColor: theme.colors.surfaceElevated }]}
+            onStartShouldSetResponder={() => true}
+          >
+            <View style={[styles.aiSelectorHeader, { borderBottomColor: theme.colors.border }]}>
+              <Ionicons name="sparkles" size={24} color={theme.colors.primary} />
+              <Text style={[styles.aiSelectorTitle, { color: theme.colors.text }]}>
+                Selecciona un Top para Análisis IA
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowAISelectorModal(false);
+                  setSearchQuery('');
+                  setSelectedCatalystId(null);
+                }}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              style={[styles.searchInput, {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                color: theme.colors.text,
+              }]}
+              placeholder="Buscar Top..."
+              placeholderTextColor={theme.colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoFocus={true}
+            />
+
+            <ScrollView style={styles.catalystList} keyboardShouldPersistTaps="handled">
+              {/* Opción "Todos" */}
+              {(!searchQuery || 'todos'.includes(searchQuery.toLowerCase())) && (
+                <TouchableOpacity
+                  style={[
+                    styles.catalystOption,
+                    styles.allOption,
+                    {
+                      backgroundColor: selectedCatalystId === 'all' 
+                        ? theme.colors.primary + '20' 
+                        : theme.colors.surface,
+                      borderColor: selectedCatalystId === 'all' 
+                        ? theme.colors.primary 
+                        : theme.colors.border,
+                    }
+                  ]}
+                  onPress={() => {
+                    setSelectedCatalystId('all');
+                    setShowAISelectorModal(false);
+                    setSearchQuery('');
+                    setShowAIModal(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.allOptionContent}>
+                    <View style={styles.allOptionHeader}>
+                      <Ionicons 
+                        name="people" 
+                        size={20} 
+                        color={selectedCatalystId === 'all' 
+                          ? theme.colors.primary 
+                          : theme.colors.textSecondary} 
+                      />
+                      <Text style={[
+                        styles.catalystOptionText,
+                        { 
+                          color: selectedCatalystId === 'all' 
+                            ? theme.colors.primary 
+                            : theme.colors.text 
+                        }
+                      ]}>
+                        Todos
+                      </Text>
+                    </View>
+                    <Text style={[styles.allOptionSubtext, { color: theme.colors.textMuted }]}>
+                      Últimos 10 encuentros
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+
+              {catalysts
+                .filter(cat => 
+                  cat.alias.toLowerCase().includes(searchQuery.toLowerCase())
+                )
+                .map((catalyst) => (
+                  <TouchableOpacity
+                    key={catalyst.catalyst_id}
+                    style={[
+                      styles.catalystOption,
+                      {
+                        backgroundColor: selectedCatalystId === catalyst.catalyst_id 
+                          ? theme.colors.primary + '20' 
+                          : theme.colors.surface,
+                        borderColor: selectedCatalystId === catalyst.catalyst_id 
+                          ? theme.colors.primary 
+                          : theme.colors.border,
+                      }
+                    ]}
+                    onPress={() => {
+                      setSelectedCatalystId(catalyst.catalyst_id);
+                      setShowAISelectorModal(false);
+                      setSearchQuery('');
+                      setShowAIModal(true);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons 
+                      name="person" 
+                      size={20} 
+                      color={selectedCatalystId === catalyst.catalyst_id 
+                        ? theme.colors.primary 
+                        : theme.colors.textSecondary} 
+                    />
+                    <Text style={[
+                      styles.catalystOptionText,
+                      { 
+                        color: selectedCatalystId === catalyst.catalyst_id 
+                          ? theme.colors.primary 
+                          : theme.colors.text 
+                      }
+                    ]}>
+                      {catalyst.alias}
+                    </Text>
+                    {catalyst.rating_promedio && (
+                      <Text style={[styles.catalystRating, { color: theme.colors.textMuted }]}>
+                        ⭐ {parseFloat(catalyst.rating_promedio).toFixed(1)}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ))}
+              {catalysts.filter(cat => 
+                cat.alias.toLowerCase().includes(searchQuery.toLowerCase())
+              ).length === 0 && !searchQuery && (
+                <View style={styles.emptyCatalystList}>
+                  <Ionicons name="search-outline" size={48} color={theme.colors.textMuted} />
+                  <Text style={[styles.emptyCatalystText, { color: theme.colors.textMuted }]}>
+                    No se encontraron tops
+                  </Text>
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Modal de Análisis IA */}
+      <AIAnalysisModal
+        visible={showAIModal}
+        onClose={() => {
+          setShowAIModal(false);
+          setSelectedCatalystId(null);
+        }}
+        formData={{}}
+        catalystId={selectedCatalystId}
+      />
 
       {/* Modal de opciones */}
       <Modal
@@ -478,6 +673,81 @@ const styles = StyleSheet.create({
   menuOptionText: {
     fontSize: 18,
     fontWeight: '500',
+  },
+  aiSelectorContent: {
+    marginHorizontal: 20,
+    borderRadius: 20,
+    maxHeight: '70%',
+    overflow: 'hidden',
+  },
+  aiSelectorHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
+  aiSelectorTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  searchInput: {
+    margin: 16,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    fontSize: 16,
+  },
+  catalystList: {
+    maxHeight: 400,
+  },
+  catalystOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 12,
+  },
+  allOption: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
+  allOptionContent: {
+    width: '100%',
+  },
+  allOptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 4,
+  },
+  catalystOptionText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  allOptionSubtext: {
+    fontSize: 12,
+    marginLeft: 32,
+  },
+  catalystRating: {
+    fontSize: 14,
+  },
+  emptyCatalystList: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyCatalystText: {
+    marginTop: 16,
+    fontSize: 16,
   },
 });
 

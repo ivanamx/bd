@@ -77,6 +77,78 @@ async function getEncounterHistory(catalystId, limit = 10) {
   return result.rows;
 }
 
+// Función para obtener estadísticas generales (todos los tops)
+async function getAllStats() {
+  const statsQuery = `
+    SELECT 
+      COUNT(*) as total_encuentros,
+      COALESCE(AVG(rating_general), 0) as rating_promedio,
+      COALESCE(AVG(duracion_min), 0) as duracion_promedio,
+      MAX(fecha_encuentro) as ultimo_encuentro,
+      MIN(fecha_encuentro) as primer_encuentro
+    FROM encounters
+  `;
+  const statsResult = await pool.query(statsQuery);
+  return statsResult.rows[0];
+}
+
+// Función para obtener posiciones más usadas (todos los tops)
+async function getAllTopPosiciones() {
+  const posicionesQuery = `
+    SELECT 
+      posiciones,
+      COUNT(*) as veces
+    FROM encounters
+    WHERE posiciones IS NOT NULL AND posiciones != ''
+    GROUP BY posiciones
+    ORDER BY veces DESC
+    LIMIT 5
+  `;
+  const result = await pool.query(posicionesQuery);
+  
+  return result.rows.map(row => {
+    const posiciones = row.posiciones.split(',').map(p => p.trim());
+    return {
+      posiciones: posiciones,
+      veces: parseInt(row.veces)
+    };
+  });
+}
+
+// Función para obtener lugares más frecuentes (todos los tops)
+async function getAllLugaresFrecuentes() {
+  const lugaresQuery = `
+    SELECT 
+      lugar_encuentro,
+      COUNT(*) as veces
+    FROM encounters
+    WHERE lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
+    GROUP BY lugar_encuentro
+    ORDER BY veces DESC
+    LIMIT 5
+  `;
+  const result = await pool.query(lugaresQuery);
+  return result.rows.map(row => ({
+    nombre: row.lugar_encuentro,
+    veces: parseInt(row.veces)
+  }));
+}
+
+// Función para obtener historial de encuentros (todos los tops)
+async function getAllEncounterHistory(limit = 10) {
+  const historyQuery = `
+    SELECT 
+      e.*,
+      c.alias
+    FROM encounters e
+    JOIN catalysts c ON e.catalyst_id = c.catalyst_id
+    ORDER BY e.fecha_encuentro DESC
+    LIMIT $1
+  `;
+  const result = await pool.query(historyQuery, [limit]);
+  return result.rows;
+}
+
 // Función para generar análisis básico (sin IA externa)
 function generateBasicAnalysis(stats, topPosiciones, lugaresFrecuentes, history) {
   // Calcular posiciones individuales más usadas
@@ -239,34 +311,6 @@ function generateBasicAnalysis(stats, topPosiciones, lugaresFrecuentes, history)
     'Disfruta del momento presente',
   ];
 
-  // Generar relato narrativo
-  const generarRelato = () => {
-    const hora = fechaSugerida.getHours();
-    const momentoDia = hora >= 6 && hora < 12 ? 'mañana' : hora >= 12 && hora < 18 ? 'tarde' : 'noche';
-    
-    const relatos = {
-      mañana: `La ${momentoDia} se presenta perfecta para este encuentro. La luz natural filtra suavemente, creando un ambiente cálido y acogedor. Después de una ducha relajante, te preparas mentalmente para la experiencia que se avecina.`,
-      tarde: `La ${momentoDia} ofrece el momento ideal. La luz del día aún ilumina suavemente, creando un ambiente perfecto. Has tenido tiempo de prepararte, de anticipar este momento especial.`,
-      noche: `La ${momentoDia} envuelve todo en un manto de intimidad. La oscuridad exterior contrasta con la calidez del espacio privado. Es el momento perfecto para desconectar del mundo exterior y conectarte completamente con la experiencia.`,
-    };
-
-    const inicioRelato = relatos[momentoDia] || relatos.noche;
-    
-    const lugarTexto = lugarMasFrecuente === 'Mi casa' ? 'tu casa' : 
-                       lugarMasFrecuente === 'Su casa' ? 'su casa' : 
-                       lugarMasFrecuente.toLowerCase();
-    
-    return `${inicioRelato}
-
-Llegas a ${lugarTexto} con una mezcla de anticipación y calma. El ambiente está preparado: ${escenarioDetallado.iluminacion.toLowerCase()}, ${escenarioDetallado.musica.toLowerCase()}. Todo está listo para que te sumerjas completamente en la experiencia.
-
-${posicionMasUsada ? `La posición "${posicionMasUsada}" te espera, y sabes que es la perfecta para este encuentro. ` : ''}Has preparado tu cuerpo y tu mente, siguiendo los consejos de bottoming que has aprendido. Cada respiración te acerca más al momento de conexión total.
-
-Durante los próximos ${duracionSugerida} minutos, te entregarás completamente. No hay prisa, solo el presente, solo la sensación, solo la conexión profunda que se crea cuando te abres completamente a la experiencia.
-
-Este encuentro será especial, porque has elegido cada detalle con cuidado, has preparado cada aspecto, y ahora solo queda disfrutar del viaje que está por comenzar.`;
-  };
-
   return {
     suggestion: {
       summary: suggestionSummary,
@@ -283,7 +327,6 @@ Este encuentro será especial, porque has elegido cada detalle con cuidado, has 
       recomendaciones: recomendaciones,
       escenario: escenarioDetallado,
       bottomingTips: tipsBottoming,
-      relato: generarRelato(),
     },
     patterns: {
       topPosiciones: topPosicionesList,
@@ -314,9 +357,11 @@ async function callAIService(analysisData, formData) {
     });
 
     // Preparar historial detallado de encuentros pasados
+    const isGeneralAnalysis = analysisData.catalyst?.alias === 'Todos los Tops';
     const historialDetallado = analysisData.history.map((enc, idx) => {
+      const topInfo = isGeneralAnalysis ? `- Top: ${enc.alias || 'No especificado'}\n` : '';
       return `Encuentro ${idx + 1} (${new Date(enc.fecha_encuentro).toLocaleDateString('es-ES')}):
-- Lugar: ${enc.lugar_encuentro || 'No especificado'}
+${topInfo}- Lugar: ${enc.lugar_encuentro || 'No especificado'}
 - Posiciones: ${enc.posiciones || 'No especificadas'}
 - Ropa/Lencería: ${enc.ropa || 'No especificada'}
 - Duración: ${enc.duracion_min} minutos
@@ -328,13 +373,21 @@ async function callAIService(analysisData, formData) {
     }).join('\n\n');
 
     // Preparar información del catalizador
-    const catalystInfo = analysisData.catalyst ? `
+    const catalystInfo = analysisData.catalyst ? (
+      analysisData.catalyst.alias === 'Todos los Tops' 
+        ? `
+ANÁLISIS GENERAL - TODOS LOS TOPS:
+Este es un análisis basado en los últimos 10 encuentros de TODOS tus tops, no de uno específico.
+- Total de encuentros analizados: ${analysisData.stats.total_encuentros}
+- Rating promedio general: ${parseFloat(analysisData.stats.rating_promedio).toFixed(1)}/10`
+        : `
 Información del Top:
 - Alias: ${analysisData.catalyst.alias}
 - Cuerpo: ${analysisData.catalyst.cuerpo || 'No especificado'}
 - Cara: ${analysisData.catalyst.cara || 'No especificado'}
 - Edad: ${analysisData.catalyst.edad || 'No especificada'}
-- Rating promedio histórico: ${analysisData.catalyst.rating_promedio || analysisData.stats.rating_promedio}/10` : '';
+- Rating promedio histórico: ${analysisData.catalyst.rating_promedio || analysisData.stats.rating_promedio}/10`
+    ) : '';
 
     const prompt = `Eres un experto consultor íntimo que analiza profundamente historiales de encuentros para crear sugerencias ÚNICAS, PERSONALIZADAS y VARIADAS. Cada análisis debe ser completamente diferente al anterior, incluso con los mismos datos.
 
@@ -359,7 +412,6 @@ INSTRUCCIONES CRÍTICAS PARA GENERAR CONTENIDO ÚNICO:
 3. CREATIVIDAD: Sugiere combinaciones nuevas, variaciones de lo que ya funcionó, y experimentos basados en el historial.
 4. ESCENARIO ÚNICO: Crea descripciones de ambiente específicas y detalladas, diferentes cada vez. Incluye detalles sensoriales (olores, texturas, temperatura, sonidos).
 5. BOTTOMING TIPS PERSONALIZADOS: Basa los consejos en los scores históricos (si score_oral_suyo es bajo, sugiere mejoras; si score_compart es alto, enfócate en eso).
-6. RELATO NARRATIVO ÚNICO: Cada relato debe tener un estilo, tono y estructura diferente. Varía entre descriptivo, poético, directo, evocador. Incluye detalles específicos del historial.
 
 Proporciona un análisis ÚNICO y PERSONALIZADO en formato JSON con esta estructura exacta:
 {
@@ -383,8 +435,7 @@ Proporciona un análisis ÚNICO y PERSONALIZADO en formato JSON con esta estruct
       "Consejo 3 técnico y detallado",
       "Consejo 4 sobre comunicación y conexión",
       "Consejo 5 sobre preparación física y mental"
-    ],
-    "relato": "Un relato narrativo ÚNICO, evocador y detallado (mínimo 200 palabras). Debe variar en estilo, estructura y contenido cada vez. Describe la experiencia completa desde la preparación hasta la conexión profunda. Incluye sensaciones físicas, emociones, detalles del ambiente, y la progresión natural del encuentro. Sé sensual pero elegante, específico pero respetuoso."
+    ]
   },
     "patterns": {
       "topPosiciones": [array de objetos con estructura: {"nombre": "string", "veces": número}],
@@ -402,7 +453,7 @@ Proporciona un análisis ÚNICO y PERSONALIZADO en formato JSON con esta estruct
   ]
 }
 
-RECUERDA: Esta respuesta debe ser COMPLETAMENTE DIFERENTE a cualquier análisis anterior. Varía el estilo, las sugerencias, los detalles, y la estructura del relato.
+RECUERDA: Esta respuesta debe ser COMPLETAMENTE DIFERENTE a cualquier análisis anterior. Varía el estilo, las sugerencias y los detalles.
 
 IMPORTANTE: Responde SOLO con el JSON, sin texto adicional antes o después. El JSON debe ser válido y parseable.`;
 
@@ -419,7 +470,7 @@ IMPORTANTE: Responde SOLO con el JSON, sin texto adicional antes o después. El 
         temperature: 0.9, // Para más creatividad y variedad
         topP: 0.95, // Para más diversidad en las respuestas
         topK: 40,
-        maxOutputTokens: 4096, // Para relatos más largos y detallados
+        maxOutputTokens: 3000, // Para análisis detallados
       },
     });
 
@@ -460,19 +511,35 @@ router.get('/:catalystId', async (req, res) => {
       formData = {};
     }
 
-    // Obtener datos del catalizador
-    const catalystQuery = 'SELECT * FROM catalysts WHERE catalyst_id = $1';
-    const catalystResult = await pool.query(catalystQuery, [catalystId]);
-    
-    if (catalystResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Catalizador no encontrado' });
-    }
+    let stats, topPosiciones, lugaresFrecuentes, history, catalyst;
 
-    // Obtener estadísticas
-    const stats = await getCatalystStats(catalystId);
-    const topPosiciones = await getTopPosiciones(catalystId);
-    const lugaresFrecuentes = await getLugaresFrecuentes(catalystId);
-    const history = await getEncounterHistory(catalystId, 10);
+    // Si catalystId es "all", obtener estadísticas generales
+    if (catalystId === 'all') {
+      stats = await getAllStats();
+      topPosiciones = await getAllTopPosiciones();
+      lugaresFrecuentes = await getAllLugaresFrecuentes();
+      history = await getAllEncounterHistory(10);
+      catalyst = {
+        alias: 'Todos los Tops',
+        catalyst_id: null,
+      };
+    } else {
+      // Obtener datos del catalizador específico
+      const catalystQuery = 'SELECT * FROM catalysts WHERE catalyst_id = $1';
+      const catalystResult = await pool.query(catalystQuery, [catalystId]);
+      
+      if (catalystResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Catalizador no encontrado' });
+      }
+
+      catalyst = catalystResult.rows[0];
+
+      // Obtener estadísticas
+      stats = await getCatalystStats(catalystId);
+      topPosiciones = await getTopPosiciones(catalystId);
+      lugaresFrecuentes = await getLugaresFrecuentes(catalystId);
+      history = await getEncounterHistory(catalystId, 10);
+    }
 
     // Preparar datos para análisis
     const analysisData = {
@@ -480,7 +547,7 @@ router.get('/:catalystId', async (req, res) => {
       topPosiciones,
       lugaresFrecuentes,
       history,
-      catalyst: catalystResult.rows[0],
+      catalyst,
     };
 
     // Intentar obtener análisis de IA

@@ -145,10 +145,13 @@ export const createScheduledEncounter = async (scheduledData) => {
 
 /**
  * Obtener análisis de IA para un catalizador
+ * @param {string|number} catalystId - ID del catalizador o 'all' para análisis general
+ * @param {object} formData - Datos del formulario (opcional)
  */
 export const getAIAnalysis = async (catalystId, formData = {}) => {
   // Codificar formData para evitar problemas con caracteres especiales
   const encodedFormData = encodeURIComponent(JSON.stringify(formData));
-  return fetchAPI(`/ai-analysis/${catalystId}?formData=${encodedFormData}`);
+  const catalystParam = catalystId === 'all' ? 'all' : catalystId;
+  return fetchAPI(`/ai-analysis/${catalystParam}?formData=${encodedFormData}`);
 };
 
