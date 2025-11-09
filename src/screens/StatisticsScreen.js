@@ -90,9 +90,16 @@ export default function StatisticsScreen({ navigation }) {
     try {
       setLoading(true);
       const data = await getStatistics();
-      setStatistics(data);
+      if (data && data.general) {
+        setStatistics(data);
+      } else {
+        console.error('Error: Datos de estadísticas inválidos', data);
+        setStatistics(null);
+      }
     } catch (error) {
       console.error('Error loading statistics:', error);
+      console.error('Error details:', error.message);
+      setStatistics(null);
     } finally {
       setLoading(false);
     }

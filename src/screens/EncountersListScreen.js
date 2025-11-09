@@ -199,7 +199,7 @@ export default function EncountersListScreen({ navigation }) {
           {!isScheduled && (
             <View style={[styles.ratingBadge, { backgroundColor: theme.colors.primary + '20' }]}>
               <Text style={[styles.ratingText, { color: theme.colors.primary }]}>
-                {item.rating_general ? parseFloat(item.rating_general).toFixed(1) : '0.0'}
+                ⭐ {item.rating_general ? parseFloat(item.rating_general).toFixed(1) : '0.0'}
               </Text>
             </View>
           )}

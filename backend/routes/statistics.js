@@ -62,11 +62,11 @@ router.get('/', async (req, res) => {
     // Lugares más frecuentes
     const topLugaresQuery = `
       SELECT 
-        lugar,
+        lugar_encuentro as lugar,
         COUNT(*) as veces
       FROM encounters
-      WHERE lugar IS NOT NULL AND lugar != ''
-      GROUP BY lugar
+      WHERE lugar_encuentro IS NOT NULL AND lugar_encuentro != ''
+      GROUP BY lugar_encuentro
       ORDER BY veces DESC
       LIMIT 5
     `;
