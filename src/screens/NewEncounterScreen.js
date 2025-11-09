@@ -27,6 +27,7 @@ const TAMANO_OPTIONS = [
 ];
 
 const CONDOM_OPTIONS = [
+  { label: 'Sin condón', value: 'Sin condón' },
   { label: 'Normal', value: 'Normal' },
   { label: 'Calor', value: 'Calor' },
   { label: 'Textura', value: 'Textura' },
@@ -48,6 +49,18 @@ const POSICIONES_OPTIONS = [
   { label: 'Cowgirl inversa', value: 'Cowgirl inversa' },
   { label: 'Cucharita', value: 'Cucharita' },
   { label: 'De pie', value: 'De pie' },
+  { label: '69', value: '69' },
+  { label: 'Sentado en la cara', value: 'Sentado en la cara' },
+  { label: 'De lado', value: 'De lado' },
+  { label: 'De rodillas', value: 'De rodillas' },
+  { label: 'En el borde de la cama', value: 'En el borde de la cama' },
+  { label: 'Prone bone', value: 'Prone bone' },
+  { label: 'Lotus', value: 'Lotus' },
+  { label: 'De espaldas con piernas arriba', value: 'De espaldas con piernas arriba' },
+  { label: 'A cuatro patas', value: 'A cuatro patas' },
+  { label: 'Contra la pared', value: 'Contra la pared' },
+  { label: 'En la silla', value: 'En la silla' },
+  { label: 'De lado con pierna arriba', value: 'De lado con pierna arriba' },
 ];
 
 const FINAL_OPTIONS = [
@@ -67,6 +80,42 @@ const ROPA_OPTIONS = [
   { label: 'Panties', value: 'Panties' },
   { label: 'Suspensorio', value: 'Suspensorio' },
   { label: 'Boxer', value: 'Boxer' },
+  { label: 'Body', value: 'Body' },
+  { label: 'Corsé', value: 'Corsé' },
+  { label: 'Body con abertura', value: 'Body con abertura' },
+  { label: 'Medias de red', value: 'Medias de red' },
+  { label: 'Tanga de encaje', value: 'Tanga de encaje' },
+  { label: 'Bralette', value: 'Bralette' },
+  { label: 'Top de encaje', value: 'Top de encaje' },
+  { label: 'Bustier', value: 'Bustier' },
+  { label: 'Babydoll', value: 'Babydoll' },
+  { label: 'Chemise', value: 'Chemise' },
+  { label: 'Medias hasta el muslo', value: 'Medias hasta el muslo' },
+  { label: 'Sin ropa', value: 'Sin ropa' },
+];
+
+const ACCESORIOS_OPTIONS = [
+  { label: 'Ninguno', value: 'Ninguno' },
+  { label: 'Consolador', value: 'Consolador' },
+  { label: 'Vibrador', value: 'Vibrador' },
+  { label: 'Arnés', value: 'Arnés' },
+  { label: 'Gag', value: 'Gag' },
+  { label: 'Esposas', value: 'Esposas' },
+  { label: 'Máscara', value: 'Máscara' },
+  { label: 'Látigo', value: 'Látigo' },
+  { label: 'Cuerdas', value: 'Cuerdas' },
+  { label: 'Pinzas', value: 'Pinzas' },
+  { label: 'Plugs anales', value: 'Plugs anales' },
+  { label: 'Bolas chinas', value: 'Bolas chinas' },
+  { label: 'Anillos', value: 'Anillos' },
+  { label: 'Collar', value: 'Collar' },
+  { label: 'Corsé', value: 'Corsé' },
+  { label: 'Máscara de cuero', value: 'Máscara de cuero' },
+  { label: 'Vendas', value: 'Vendas' },
+  { label: 'Spreader bar', value: 'Spreader bar' },
+  { label: 'Fustas', value: 'Fustas' },
+  { label: 'Juguetes de silicona', value: 'Juguetes de silicona' },
+  { label: 'Bondage tape', value: 'Bondage tape' },
 ];
 
 export default function NewEncounterScreen({ navigation, route }) {
@@ -86,6 +135,7 @@ export default function NewEncounterScreen({ navigation, route }) {
     posiciones: '',
     final: '',
     ropa: '',
+    accesorios: '',
     score_toma_ruda: 5,
     score_acento_ancla: 5,
     score_compart: 5,
@@ -305,6 +355,14 @@ export default function NewEncounterScreen({ navigation, route }) {
           options={ROPA_OPTIONS}
           onValueChange={(value) => setFormData({ ...formData, ropa: value })}
           placeholder="Seleccionar ropa/lencería..."
+        />
+
+        <PickerSelect
+          label="Accesorios"
+          value={formData.accesorios}
+          options={ACCESORIOS_OPTIONS}
+          onValueChange={(value) => setFormData({ ...formData, accesorios: value })}
+          placeholder="Seleccionar accesorio..."
         />
       </View>
 

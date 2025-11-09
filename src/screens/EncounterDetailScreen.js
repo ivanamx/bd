@@ -66,6 +66,21 @@ export default function EncounterDetailScreen({ route }) {
     );
   };
 
+  const DetailItem = ({ icon, label, value }) => {
+    if (!value) return null;
+    return (
+      <View style={[styles.detailItem, { backgroundColor: theme.colors.surface }]}>
+        <View style={[styles.detailItemIcon, { backgroundColor: theme.colors.primary + '15' }]}>
+          <Ionicons name={icon} size={20} color={theme.colors.primary} />
+        </View>
+        <View style={styles.detailItemContent}>
+          <Text style={[styles.detailItemLabel, { color: theme.colors.textMuted }]}>{label}</Text>
+          <Text style={[styles.detailItemValue, { color: theme.colors.text }]} numberOfLines={2}>{value}</Text>
+        </View>
+      </View>
+    );
+  };
+
   const ScoreBadge = ({ label, value }) => (
     <View style={[styles.scoreBadge, { backgroundColor: theme.colors.surface }]}>
       <Text style={[styles.scoreLabel, { color: theme.colors.textMuted }]}>{label}</Text>
@@ -104,11 +119,13 @@ export default function EncounterDetailScreen({ route }) {
           Detalles Físicos
         </Text>
         
-        <DetailRow icon="resize-outline" label="Tamaño" value={encounter.tamano} />
-        <DetailRow icon="shield-outline" label="Condón" value={encounter.condon} />
-        <DetailRow icon="body-outline" label="Posiciones" value={encounter.posiciones} />
-        <DetailRow icon="star-outline" label="Final" value={encounter.final} />
-        <DetailRow icon="shirt-outline" label="Ropa/Lencería" value={encounter.ropa} />
+        <View style={styles.physicalDetailsGrid}>
+          <DetailItem icon="resize-outline" label="Tamaño" value={encounter.tamano} />
+          <DetailItem icon="shield-outline" label="Condón" value={encounter.condon} />
+          <DetailItem icon="body-outline" label="Posiciones" value={encounter.posiciones} />
+          <DetailItem icon="star-outline" label="Final" value={encounter.final} />
+          <DetailItem icon="shirt-outline" label="Ropa/Lencería" value={encounter.ropa} />
+        </View>
       </View>
 
       <View style={styles.section}>
@@ -200,6 +217,39 @@ const styles = StyleSheet.create({
   detailValue: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  physicalDetailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailItem: {
+    flex: 1,
+    minWidth: '47%',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 0,
+  },
+  detailItemIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  detailItemContent: {
+    flex: 1,
+  },
+  detailItemLabel: {
+    fontSize: 12,
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  detailItemValue: {
+    fontSize: 15,
+    fontWeight: '600',
+    lineHeight: 20,
   },
   scoresContainer: {
     flexDirection: 'row',

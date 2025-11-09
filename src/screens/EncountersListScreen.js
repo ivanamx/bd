@@ -161,9 +161,9 @@ export default function EncountersListScreen({ navigation }) {
     if (!tamano) return null;
     
     const sizes = [
-      { label: 'Pequeño', fontSize: 14, opacity: 0.4 },
-      { label: 'Mediano', fontSize: 18, opacity: 0.6 },
-      { label: 'Grande', fontSize: 22, opacity: 1.0 }
+      { label: 'Pequeño', activeSize: 16, inactiveSize: 10 },
+      { label: 'Mediano', activeSize: 22, inactiveSize: 10 },
+      { label: 'Grande', activeSize: 28, inactiveSize: 10 }
     ];
     
     return (
@@ -176,9 +176,10 @@ export default function EncountersListScreen({ navigation }) {
               style={[
                 styles.sizeIcon,
                 {
-                  fontSize: size.fontSize,
-                  opacity: isActive ? size.opacity : 0.2,
-                  marginRight: index < sizes.length - 1 ? 4 : 0,
+                  fontSize: isActive ? size.activeSize : size.inactiveSize,
+                  opacity: isActive ? 1.0 : 0.15,
+                  transform: [{ scale: isActive ? 1.0 : 0.7 }],
+                  marginRight: index < sizes.length - 1 ? 6 : 0,
                 }
               ]}
             >
