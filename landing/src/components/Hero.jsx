@@ -51,22 +51,22 @@ const Hero = () => {
           className="hero-title"
           variants={itemVariants}
         >
-          <span className="gradient-text">Privacidad Total</span>
+          <span className="gradient-text">Lorei Encounters</span>
           <br />
-          Sin tiendas. Sin intermediarios.
+          Tu historial íntimo con
           <br />
-          <span className="highlight">Control absoluto de tus datos</span>
+          <span className="highlight">análisis IA y sugerencias</span>
         </motion.h1>
 
         <motion.p
           className="hero-description"
           variants={itemVariants}
         >
-          Lorei Encounters no está en Google Play ni App Store por una razón:
+          Registra cada encuentro, analiza patrones y recibe sugerencias personalizadas.
           <br />
-          <strong>Tu información íntima nunca pasa por servidores de terceros.</strong>
+          <strong>Todo privado. Sin tiendas. Sin rastreo.</strong>
           <br />
-          Descarga directa = Privacidad real. Control total. Cero compromisos.
+          Tu información íntima nunca pasa por servidores de terceros.
         </motion.p>
 
         <motion.div
@@ -99,18 +99,18 @@ const Hero = () => {
           variants={itemVariants}
         >
           <div className="stat-item">
-            <div className="stat-number">0%</div>
-            <div className="stat-label">Datos Compartidos</div>
+            <div className="stat-number">📝</div>
+            <div className="stat-label">Historial Completo</div>
           </div>
           <div className="stat-divider" />
           <div className="stat-item">
-            <div className="stat-number">100%</div>
-            <div className="stat-label">Control Tuyo</div>
+            <div className="stat-number">🤖</div>
+            <div className="stat-label">Análisis IA</div>
           </div>
           <div className="stat-divider" />
           <div className="stat-item">
-            <div className="stat-number">∞</div>
-            <div className="stat-label">Privacidad</div>
+            <div className="stat-number">🔒</div>
+            <div className="stat-label">100% Privado</div>
           </div>
         </motion.div>
       </motion.div>

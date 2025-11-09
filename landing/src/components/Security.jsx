@@ -73,10 +73,10 @@ const Security = () => {
       >
         <motion.div className="section-header" variants={itemVariants}>
           <h2 className="section-title">
-            Tu Privacidad es el <span className="gradient-text">Producto</span>
+            Privacidad <span className="gradient-text">Real</span>
           </h2>
           <p className="section-description">
-            No vendemos una app de registro. Vendemos la garantía de que tu información íntima nunca será rastreada, vendida o compartida.
+            Registra tus encuentros más íntimos con total confianza. Sin Google, sin Apple, sin intermediarios. Solo tú y tus datos.
           </p>
         </motion.div>
 

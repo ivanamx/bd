@@ -9,34 +9,34 @@ const Features = () => {
 
   const features = [
     {
-      icon: '🔒',
-      title: 'Control Total de Datos',
-      description: 'Tus datos nunca salen de tu control. Sin Google Play, sin App Store, sin intermediarios. Descarga directa = Privacidad real.'
-    },
-    {
-      icon: '🚫',
-      title: 'Cero Rastreo de Terceros',
-      description: 'No hay analytics de Google, Facebook o Apple. No hay cookies. No hay seguimiento. Tu información íntima permanece íntima.'
-    },
-    {
-      icon: '🔐',
-      title: 'Encriptación End-to-End',
-      description: 'Todos tus registros están encriptados con estándares bancarios. Solo tú tienes las llaves. Ni siquiera nosotros podemos ver tu información.'
-    },
-    {
-      icon: '📱',
-      title: 'Sin Servidores de Terceros',
-      description: 'Tu servidor, tu control. O elige nuestro servidor privado. Pero nunca pasamos por infraestructura de grandes tech.'
-    },
-    {
       icon: '📝',
-      title: 'Registro Completo y Privado',
-      description: 'Registra cada encuentro íntimo con total confianza. Detalles completos, calificaciones, notas. Todo privado, todo tuyo.'
+      title: 'Registro Detallado de Encuentros',
+      description: 'Guarda cada encuentro con todos los detalles que importan: fecha, duración, lugar, calificaciones, posiciones, notas personales. Tu historial completo, siempre accesible.'
     },
     {
       icon: '🤖',
-      title: 'Análisis IA Local',
-      description: 'Análisis inteligente que corre en tu dispositivo o servidor privado. Insights sin compartir datos con servicios externos.'
+      title: 'Análisis Inteligente con IA',
+      description: 'La IA analiza tu historial y encuentra patrones que quizás no notaste. Descubre qué funciona mejor, cuándo y con quién. Insights reales basados en tus datos.'
+    },
+    {
+      icon: '💡',
+      title: 'Sugerencias Personalizadas',
+      description: 'Recibe recomendaciones inteligentes para tus próximos encuentros: mejores momentos, lugares sugeridos, posiciones que podrías probar, todo basado en lo que realmente te funciona.'
+    },
+    {
+      icon: '📊',
+      title: 'Estadísticas y Patrones',
+      description: 'Visualiza tus datos de forma clara: calificaciones promedio, encuentros más frecuentes, tendencias a lo largo del tiempo. Conoce tus preferencias reales.'
+    },
+    {
+      icon: '👥',
+      title: 'Gestión de Tops',
+      description: 'Organiza tus contactos con alias personalizados. Ve el historial con cada uno, calificaciones promedio y notas. Todo organizado y fácil de encontrar.'
+    },
+    {
+      icon: '🔒',
+      title: 'Privacidad Total',
+      description: 'Todo esto sin que Google, Apple o nadie más sepa. Descarga directa, sin tiendas, sin rastreo. Tu información íntima permanece íntima, siempre.'
     }
   ]
 
@@ -72,10 +72,10 @@ const Features = () => {
       >
         <motion.div className="section-header" variants={itemVariants}>
           <h2 className="section-title">
-            Por Qué Elegir <span className="gradient-text">Descarga Directa</span>
+            Todo lo que <span className="gradient-text">Necesitas</span>
           </h2>
           <p className="section-description">
-            No es solo una app. Es tu garantía de que tu información íntima nunca será vendida, rastreada o compartida.
+            Registra, analiza y mejora tus encuentros con inteligencia artificial. Todo privado, todo tuyo.
           </p>
         </motion.div>
 
