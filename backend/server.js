@@ -22,10 +22,12 @@ try {
   const catalystsRoutes = require('./routes/catalysts');
   const encountersRoutes = require('./routes/encounters');
   const scheduledEncountersRoutes = require('./routes/scheduledEncounters');
+  const aiAnalysisRoutes = require('./routes/aiAnalysis');
 
   app.use('/api/catalysts', catalystsRoutes);
   app.use('/api/encounters', encountersRoutes);
   app.use('/api/scheduled-encounters', scheduledEncountersRoutes);
+  app.use('/api/ai-analysis', aiAnalysisRoutes);
   
   console.log('✅ Rutas cargadas correctamente');
 } catch (error) {
@@ -40,7 +42,8 @@ app.get('/', (req, res) => {
     endpoints: {
       catalysts: '/api/catalysts',
       encounters: '/api/encounters',
-      scheduledEncounters: '/api/scheduled-encounters'
+      scheduledEncounters: '/api/scheduled-encounters',
+      aiAnalysis: '/api/ai-analysis'
     }
   });
 });

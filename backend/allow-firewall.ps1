@@ -15,3 +15,4 @@ Write-Host "✅ Regla de firewall creada exitosamente" -ForegroundColor Green
 Write-Host "El puerto 5000 ahora está permitido para conexiones entrantes" -ForegroundColor Green
 
 
+

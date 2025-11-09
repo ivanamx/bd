@@ -141,3 +141,14 @@ export const createScheduledEncounter = async (scheduledData) => {
   });
 };
 
+// ==================== ANÁLISIS IA ====================
+
+/**
+ * Obtener análisis de IA para un catalizador
+ */
+export const getAIAnalysis = async (catalystId, formData = {}) => {
+  // Codificar formData para evitar problemas con caracteres especiales
+  const encodedFormData = encodeURIComponent(JSON.stringify(formData));
+  return fetchAPI(`/ai-analysis/${catalystId}?formData=${encodedFormData}`);
+};
+

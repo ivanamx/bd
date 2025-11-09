@@ -15,6 +15,7 @@ import { createEncounter, getCatalysts } from '../services/api';
 import RatingSlider from '../components/RatingSlider';
 import PickerSelect from '../components/PickerSelect';
 import MultiPickerSelect from '../components/MultiPickerSelect';
+import AIAnalysisModal from '../components/AIAnalysisModal';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
@@ -33,39 +34,39 @@ const CONDOM_OPTIONS = [
 ];
 
 const LUGAR_ENCUENTRO_OPTIONS = [
-  { label: 'Hotel', value: 'hotel' },
-  { label: 'Mi casa', value: 'mi casa' },
-  { label: 'Su casa', value: 'su casa' },
-  { label: 'Coche', value: 'coche' },
-  { label: 'Motel', value: 'motel' },
+  { label: 'Hotel', value: 'Hotel' },
+  { label: 'Mi casa', value: 'Mi casa' },
+  { label: 'Su casa', value: 'Su casa' },
+  { label: 'Coche', value: 'Coche' },
+  { label: 'Motel', value: 'Motel' },
 ];
 
 const POSICIONES_OPTIONS = [
-  { label: 'Misionero', value: 'misionero' },
-  { label: 'Perrito', value: 'perrito' },
-  { label: 'Cowgirl', value: 'cowgirl' },
-  { label: 'Cowgirl inversa', value: 'cowgirl inversa' },
-  { label: 'Cucharita', value: 'cucharita' },
-  { label: 'De pie', value: 'de pie' },
+  { label: 'Misionero', value: 'Misionero' },
+  { label: 'Perrito', value: 'Perrito' },
+  { label: 'Cowgirl', value: 'Cowgirl' },
+  { label: 'Cowgirl inversa', value: 'Cowgirl inversa' },
+  { label: 'Cucharita', value: 'Cucharita' },
+  { label: 'De pie', value: 'De pie' },
 ];
 
 const FINAL_OPTIONS = [
-  { label: 'Cara', value: 'cara' },
-  { label: 'Pecho', value: 'pecho' },
-  { label: 'Boca', value: 'boca' },
-  { label: 'Nalgas', value: 'nalgas' },
-  { label: 'Espalda', value: 'espalda' },
-  { label: 'Dentro', value: 'dentro' },
+  { label: 'Cara', value: 'Cara' },
+  { label: 'Pecho', value: 'Pecho' },
+  { label: 'Boca', value: 'Boca' },
+  { label: 'Nalgas', value: 'Nalgas' },
+  { label: 'Espalda', value: 'Espalda' },
+  { label: 'Dentro', value: 'Dentro' },
 ];
 
 const ROPA_OPTIONS = [
-  { label: 'Liguero completo', value: 'liguero completo' },
-  { label: 'Tanga', value: 'tanga' },
-  { label: 'Medias', value: 'medias' },
-  { label: 'Hilo', value: 'hilo' },
-  { label: 'Panties', value: 'panties' },
-  { label: 'Suspensorio', value: 'suspensorio' },
-  { label: 'Boxer', value: 'boxer' },
+  { label: 'Liguero completo', value: 'Liguero completo' },
+  { label: 'Tanga', value: 'Tanga' },
+  { label: 'Medias', value: 'Medias' },
+  { label: 'Hilo', value: 'Hilo' },
+  { label: 'Panties', value: 'Panties' },
+  { label: 'Suspensorio', value: 'Suspensorio' },
+  { label: 'Boxer', value: 'Boxer' },
 ];
 
 export default function NewEncounterScreen({ navigation }) {
@@ -73,6 +74,7 @@ export default function NewEncounterScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [catalysts, setCatalysts] = useState([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
   
   const [formData, setFormData] = useState({
     catalyst_id: null,
@@ -112,7 +114,7 @@ export default function NewEncounterScreen({ navigation }) {
 
   const handleSubmit = async () => {
     if (!formData.catalyst_id) {
-      Alert.alert('Error', 'Por favor selecciona un Catalizador');
+      Alert.alert('Error', 'Por favor selecciona un Top');
       return;
     }
     if (!formData.tamano) {
@@ -150,6 +152,85 @@ export default function NewEncounterScreen({ navigation }) {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleOpenAIModal = () => {
+    if (!formData.catalyst_id) {
+      Alert.alert('Error', 'Por favor selecciona un Top primero para ver el análisis');
+      return;
+    }
+    setShowAIModal(true);
+  };
+
+  const handleCloseAIModal = (suggestions) => {
+    setShowAIModal(false);
+    if (suggestions) {
+      applySuggestions(suggestions);
+    }
+  };
+
+  const applySuggestions = (suggestions) => {
+    const updatedFormData = { ...formData };
+
+    // Aplicar lugar si está disponible
+    if (suggestions.lugar_encuentro) {
+      const lugarOption = LUGAR_ENCUENTRO_OPTIONS.find(
+        opt => opt.label === suggestions.lugar_encuentro || opt.value === suggestions.lugar_encuentro
+      );
+      if (lugarOption) {
+        updatedFormData.lugar_encuentro = lugarOption.value;
+      }
+    }
+
+    // Aplicar posiciones si están disponibles
+    if (suggestions.posiciones && suggestions.posiciones.length > 0) {
+      const posicionesArray = Array.isArray(suggestions.posiciones) 
+        ? suggestions.posiciones 
+        : [suggestions.posiciones];
+      updatedFormData.posiciones = posicionesArray.join(', ');
+    }
+
+    // Aplicar ropa si está disponible
+    if (suggestions.ropa) {
+      const ropaOption = ROPA_OPTIONS.find(
+        opt => opt.label === suggestions.ropa || opt.value === suggestions.ropa
+      );
+      if (ropaOption) {
+        updatedFormData.ropa = ropaOption.value;
+      }
+    }
+
+    // Aplicar duración si está disponible
+    if (suggestions.duracion_min) {
+      updatedFormData.duracion_min = parseInt(suggestions.duracion_min) || updatedFormData.duracion_min;
+    }
+
+    // Aplicar fecha si está disponible (parsear desde string)
+    if (suggestions.fecha_encuentro) {
+      try {
+        // Intentar parsear la fecha del formato español
+        const fechaMatch = suggestions.fecha_encuentro.match(/(\d{1,2})\s+de\s+(\w+)\s+de\s+(\d{4}),\s+(\d{1,2}):(\d{2})/);
+        if (fechaMatch) {
+          const meses = {
+            'enero': 0, 'febrero': 1, 'marzo': 2, 'abril': 3, 'mayo': 4, 'junio': 5,
+            'julio': 6, 'agosto': 7, 'septiembre': 8, 'octubre': 9, 'noviembre': 10, 'diciembre': 11
+          };
+          const dia = parseInt(fechaMatch[1]);
+          const mes = meses[fechaMatch[2].toLowerCase()];
+          const año = parseInt(fechaMatch[3]);
+          const hora = parseInt(fechaMatch[4]);
+          const minuto = parseInt(fechaMatch[5]);
+          if (mes !== undefined) {
+            updatedFormData.fecha_encuentro = new Date(año, mes, dia, hora, minuto);
+          }
+        }
+      } catch (e) {
+        console.log('No se pudo parsear la fecha sugerida:', e);
+      }
+    }
+
+    setFormData(updatedFormData);
+    Alert.alert('Éxito', 'Sugerencias aplicadas al formulario');
   };
 
   return (
@@ -375,6 +456,20 @@ export default function NewEncounterScreen({ navigation }) {
       </View>
 
       <TouchableOpacity
+        style={[styles.aiButton, { 
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.primary,
+        }]}
+        onPress={handleOpenAIModal}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="sparkles" size={24} color={theme.colors.primary} />
+        <Text style={[styles.aiButtonText, { color: theme.colors.primary }]}>
+          Análisis IA
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
         style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
         onPress={handleSubmit}
         disabled={loading}
@@ -386,6 +481,13 @@ export default function NewEncounterScreen({ navigation }) {
           <Text style={styles.submitButtonText}>Registrar Encuentro</Text>
         )}
       </TouchableOpacity>
+
+      <AIAnalysisModal
+        visible={showAIModal}
+        onClose={handleCloseAIModal}
+        formData={formData}
+        catalystId={formData.catalyst_id}
+      />
     </ScrollView>
   );
 }
@@ -482,11 +584,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 4,
   },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 18,
+    borderRadius: 16,
+    borderWidth: 2,
+    marginTop: 20,
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  aiButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
   submitButton: {
     padding: 18,
     borderRadius: 16,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

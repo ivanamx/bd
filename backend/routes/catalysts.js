@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
     res.json(catalysts);
   } catch (error) {
     console.error('Error fetching catalysts:', error);
-    res.status(500).json({ error: 'Error al obtener catalizadores' });
+    res.status(500).json({ error: 'Error al obtener tops' });
   }
 });
 
