@@ -13,6 +13,17 @@ const API_BASE_URL = (__DEV__ && !USE_PRODUCTION)
   ? DEV_URL  // Desarrollo: Cloudflare Tunnel
   : PROD_URL;  // Producción: VPS
 
+// Token de autenticación (se actualiza desde AuthContext)
+let authToken = null;
+
+export const setAuthToken = (token) => {
+  authToken = token;
+};
+
+export const clearAuthToken = () => {
+  authToken = null;
+};
+
 /**
  * Función auxiliar para hacer peticiones HTTP
  */
@@ -26,6 +37,11 @@ const fetchAPI = async (endpoint, options = {}) => {
     },
     ...options,
   };
+
+  // Agregar token de autenticación si existe
+  if (authToken) {
+    config.headers['Authorization'] = `Bearer ${authToken}`;
+  }
 
   if (config.body && typeof config.body === 'object') {
     config.body = JSON.stringify(config.body);
@@ -162,5 +178,59 @@ export const getAIAnalysis = async (catalystId, formData = {}) => {
  */
 export const getStatistics = async () => {
   return fetchAPI('/statistics');
+};
+
+// ==================== AUTENTICACIÓN ====================
+
+/**
+ * Registrar nuevo usuario
+ */
+export const register = async (email, password) => {
+  return fetchAPI('/auth/register', {
+    method: 'POST',
+    body: { email, password },
+  });
+};
+
+/**
+ * Iniciar sesión
+ */
+export const login = async (email, password) => {
+  return fetchAPI('/auth/login', {
+    method: 'POST',
+    body: { email, password },
+  });
+};
+
+/**
+ * Renovar token de acceso
+ */
+export const refreshToken = async (refreshToken) => {
+  return fetchAPI('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken },
+  });
+};
+
+/**
+ * Cerrar sesión
+ */
+export const logout = async () => {
+  try {
+    await fetchAPI('/auth/logout', {
+      method: 'POST',
+    });
+  } catch (error) {
+    console.error('Error en logout:', error);
+  } finally {
+    clearAuthToken();
+  }
+};
+
+/**
+ * Obtener información del usuario actual
+ */
+export const getCurrentUser = async () => {
+  return fetchAPI('/auth/me');
 };
 

@@ -12,8 +12,10 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { getEncounters, getScheduledEncounters, getCatalysts } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale/es';
@@ -21,6 +23,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AIAnalysisModal from '../components/AIAnalysisModal';
 
 export default function EncountersListScreen({ navigation }) {
+  const { signOut } = useAuth();
+  const theme = useTheme();
+
   React.useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -35,11 +40,28 @@ export default function EncountersListScreen({ navigation }) {
           >
             <Ionicons name="stats-chart-outline" size={24} color="#d4a5c7" />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              Alert.alert(
+                'Cerrar Sesión',
+                '¿Estás seguro de que quieres cerrar sesión?',
+                [
+                  { text: 'Cancelar', style: 'cancel' },
+                  {
+                    text: 'Cerrar Sesión',
+                    style: 'destructive',
+                    onPress: () => signOut(),
+                  },
+                ]
+              );
+            }}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#d4a5c7" />
+          </TouchableOpacity>
         </View>
       ),
     });
-  }, [navigation]);
-  const theme = useTheme();
+  }, [navigation, signOut]);
   const [encounters, setEncounters] = useState([]);
   const [scheduledEncounters, setScheduledEncounters] = useState([]);
   const [loading, setLoading] = useState(true);

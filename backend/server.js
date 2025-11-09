@@ -19,17 +19,23 @@ app.use((req, res, next) => {
 
 // Rutas
 try {
+  const authRoutes = require('./routes/auth');
   const catalystsRoutes = require('./routes/catalysts');
   const encountersRoutes = require('./routes/encounters');
   const scheduledEncountersRoutes = require('./routes/scheduledEncounters');
   const aiAnalysisRoutes = require('./routes/aiAnalysis');
   const statisticsRoutes = require('./routes/statistics');
 
-  app.use('/api/catalysts', catalystsRoutes);
-  app.use('/api/encounters', encountersRoutes);
-  app.use('/api/scheduled-encounters', scheduledEncountersRoutes);
-  app.use('/api/ai-analysis', aiAnalysisRoutes);
-  app.use('/api/statistics', statisticsRoutes);
+  // Rutas públicas (sin autenticación)
+  app.use('/api/auth', authRoutes);
+
+  // Rutas protegidas (requieren autenticación)
+  const { authenticateToken } = require('./middleware/auth');
+  app.use('/api/catalysts', authenticateToken, catalystsRoutes);
+  app.use('/api/encounters', authenticateToken, encountersRoutes);
+  app.use('/api/scheduled-encounters', authenticateToken, scheduledEncountersRoutes);
+  app.use('/api/ai-analysis', authenticateToken, aiAnalysisRoutes);
+  app.use('/api/statistics', authenticateToken, statisticsRoutes);
   
   console.log('✅ Rutas cargadas correctamente');
 } catch (error) {
@@ -42,6 +48,7 @@ app.get('/', (req, res) => {
     message: 'Lorei Encounters API',
     version: '1.0.0',
     endpoints: {
+      auth: '/api/auth',
       catalysts: '/api/catalysts',
       encounters: '/api/encounters',
       scheduledEncounters: '/api/scheduled-encounters',
